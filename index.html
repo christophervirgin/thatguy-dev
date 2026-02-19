@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>thatguy.dev</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   :root {
     --bg: #0d1117; --surface: #161b22; --border: #30363d;
@@ -22,12 +23,11 @@
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
   }
   .container { max-width: 600px; padding: 40px 24px; text-align: center; }
-  
-  .logo { font-size: 3rem; margin-bottom: 8px; }
-  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 4px; }
+
+  h1 { font-size: 2.4rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
   h1 span { color: var(--accent); }
-  .tagline { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 48px; }
-  
+  .tagline { color: var(--text-dim); font-size: 1.05rem; margin-bottom: 48px; }
+
   .tools { display: flex; flex-direction: column; gap: 12px; }
   .tool-card {
     display: flex; align-items: center; gap: 16px;
@@ -40,7 +40,7 @@
   .tool-icon { font-size: 1.8rem; flex-shrink: 0; }
   .tool-info { text-align: left; }
   .tool-name { font-weight: 600; font-size: 1rem; margin-bottom: 2px; }
-  .tool-desc { font-size: 0.85rem; color: var(--text-dim); }
+  .tool-desc { font-size: 0.85rem; color: var(--text-dim); line-height: 1.4; }
   .tool-path { font-size: 0.75rem; color: var(--accent); font-family: monospace; margin-top: 4px; }
 
   .footer { margin-top: 48px; color: var(--text-dim); font-size: 0.8rem; }
@@ -50,7 +50,6 @@
 </head>
 <body>
 <div class="container">
-  <div class="logo">👨‍💻</div>
   <h1>that<span>guy</span>.dev</h1>
   <p class="tagline">Tools for people who manage things.</p>
 
