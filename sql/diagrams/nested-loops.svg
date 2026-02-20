@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 280" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif">
+  <style>
+    .label { font-size: 11px; fill: var(--diagram-text, #e6edf3); }
+    .label-bold { font-size: 12px; font-weight: 600; fill: var(--diagram-text, #e6edf3); }
+    .label-dim { font-size: 10px; fill: var(--diagram-dim, #8b949e); }
+    .box { fill: var(--diagram-surface, #161b22); stroke: var(--diagram-border, #30363d); stroke-width: 1.5; rx: 8; }
+    .box-accent { fill: var(--diagram-surface, #161b22); stroke: var(--diagram-accent, #58a6ff); stroke-width: 2; rx: 8; }
+    .arrow { stroke: var(--diagram-dim, #8b949e); stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+    .arrow-active { stroke: var(--diagram-accent, #58a6ff); stroke-width: 2; fill: none; marker-end: url(#arrowhead-accent); }
+    .row { rx: 3; ry: 3; }
+    .row-outer { fill: var(--diagram-accent, #58a6ff); opacity: 0.9; }
+    .row-inner { fill: var(--diagram-green, #4ecca3); opacity: 0.9; }
+    .row-result { fill: var(--diagram-yellow, #f0c040); opacity: 0.9; }
+    .row-dim { fill: var(--diagram-border, #30363d); opacity: 0.5; }
+    .scan-line { stroke: var(--diagram-accent, #58a6ff); stroke-width: 2; stroke-dasharray: 4 3; opacity: 0; }
+    .pulse { fill: var(--diagram-accent, #58a6ff); opacity: 0; }
+
+    /* Outer row 1 highlights, seeks inner */
+    @keyframes outerScan1 {
+      0%, 8% { opacity: 0.3; }
+      10%, 35% { opacity: 1; }
+      37%, 100% { opacity: 0.3; }
+    }
+    @keyframes outerScan2 {
+      0%, 38% { opacity: 0.3; }
+      40%, 65% { opacity: 1; }
+      67%, 100% { opacity: 0.3; }
+    }
+    @keyframes outerScan3 {
+      0%, 68% { opacity: 0.3; }
+      70%, 95% { opacity: 1; }
+      97%, 100% { opacity: 0.3; }
+    }
+
+    /* Inner seek animations */
+    @keyframes innerSeek1 {
+      0%, 14% { opacity: 0; }
+      16% { opacity: 1; }
+      18%, 30% { opacity: 1; }
+      32% { opacity: 0; }
+      32%, 100% { opacity: 0; }
+    }
+    @keyframes innerSeek2 {
+      0%, 44% { opacity: 0; }
+      46% { opacity: 1; }
+      48%, 60% { opacity: 1; }
+      62% { opacity: 0; }
+      62%, 100% { opacity: 0; }
+    }
+    @keyframes innerSeek3 {
+      0%, 74% { opacity: 0; }
+      76% { opacity: 1; }
+      78%, 90% { opacity: 1; }
+      92% { opacity: 0; }
+      92%, 100% { opacity: 0; }
+    }
+
+    /* Scan line from outer to inner */
+    @keyframes scanLine1 {
+      0%, 12% { opacity: 0; }
+      14%, 30% { opacity: 0.8; }
+      32%, 100% { opacity: 0; }
+    }
+    @keyframes scanLine2 {
+      0%, 42% { opacity: 0; }
+      44%, 60% { opacity: 0.8; }
+      62%, 100% { opacity: 0; }
+    }
+    @keyframes scanLine3 {
+      0%, 72% { opacity: 0; }
+      74%, 90% { opacity: 0.8; }
+      92%, 100% { opacity: 0; }
+    }
+
+    /* Result rows appearing */
+    @keyframes result1 {
+      0%, 28% { opacity: 0; }
+      32%, 100% { opacity: 1; }
+    }
+    @keyframes result2 {
+      0%, 58% { opacity: 0; }
+      62%, 100% { opacity: 1; }
+    }
+    @keyframes result3 {
+      0%, 88% { opacity: 0; }
+      92%, 100% { opacity: 1; }
+    }
+
+    .outer-r1 { animation: outerScan1 6s ease-in-out infinite; }
+    .outer-r2 { animation: outerScan2 6s ease-in-out infinite; }
+    .outer-r3 { animation: outerScan3 6s ease-in-out infinite; }
+    .inner-s1 { animation: innerSeek1 6s ease-in-out infinite; }
+    .inner-s2 { animation: innerSeek2 6s ease-in-out infinite; }
+    .inner-s3 { animation: innerSeek3 6s ease-in-out infinite; }
+    .scan-l1 { animation: scanLine1 6s ease-in-out infinite; }
+    .scan-l2 { animation: scanLine2 6s ease-in-out infinite; }
+    .scan-l3 { animation: scanLine3 6s ease-in-out infinite; }
+    .result-r1 { animation: result1 6s ease-in-out infinite; }
+    .result-r2 { animation: result2 6s ease-in-out infinite; }
+    .result-r3 { animation: result3 6s ease-in-out infinite; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="var(--diagram-dim, #8b949e)" />
+    </marker>
+    <marker id="arrowhead-accent" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="var(--diagram-accent, #58a6ff)" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="260" y="22" text-anchor="middle" class="label-bold" font-size="13">Nested Loops Join</text>
+  <text x="260" y="38" text-anchor="middle" class="label-dim">For each outer row → seek matching inner rows</text>
+
+  <!-- Outer Input box -->
+  <rect x="20" y="60" width="140" height="160" class="box-accent" />
+  <text x="90" y="80" text-anchor="middle" class="label-bold">Outer Input</text>
+  <text x="90" y="94" text-anchor="middle" class="label-dim">e.g. Index Scan</text>
+
+  <!-- Outer rows -->
+  <rect x="36" y="108" width="108" height="24" class="row row-outer outer-r1" />
+  <text x="90" y="124" text-anchor="middle" class="label" font-size="10" style="pointer-events:none">OrderID = 101</text>
+
+  <rect x="36" y="140" width="108" height="24" class="row row-outer outer-r2" />
+  <text x="90" y="156" text-anchor="middle" class="label" font-size="10" style="pointer-events:none">OrderID = 102</text>
+
+  <rect x="36" y="172" width="108" height="24" class="row row-outer outer-r3" />
+  <text x="90" y="188" text-anchor="middle" class="label" font-size="10" style="pointer-events:none">OrderID = 103</text>
+
+  <!-- Inner Input box -->
+  <rect x="200" y="60" width="140" height="160" class="box" />
+  <text x="270" y="80" text-anchor="middle" class="label-bold">Inner Input</text>
+  <text x="270" y="94" text-anchor="middle" class="label-dim">e.g. Index Seek</text>
+
+  <!-- Inner rows (static) -->
+  <rect x="216" y="108" width="108" height="18" class="row row-dim" />
+  <rect x="216" y="130" width="108" height="18" class="row row-dim" />
+  <rect x="216" y="152" width="108" height="18" class="row row-dim" />
+  <rect x="216" y="174" width="108" height="18" class="row row-dim" />
+  <rect x="216" y="196" width="108" height="18" class="row row-dim" />
+
+  <!-- Inner seek highlights -->
+  <rect x="216" y="108" width="108" height="18" class="row row-inner inner-s1" />
+  <rect x="216" y="152" width="108" height="18" class="row row-inner inner-s2" />
+  <rect x="216" y="174" width="108" height="18" class="row row-inner inner-s3" />
+
+  <!-- Seek arrows from outer to inner -->
+  <line x1="160" y1="120" x2="200" y2="117" class="scan-line scan-l1" />
+  <line x1="160" y1="152" x2="200" y2="161" class="scan-line scan-l2" />
+  <line x1="160" y1="184" x2="200" y2="183" class="scan-line scan-l3" />
+
+  <!-- Output box -->
+  <rect x="380" y="60" width="126" height="160" class="box" />
+  <text x="443" y="80" text-anchor="middle" class="label-bold">Result</text>
+  <text x="443" y="94" text-anchor="middle" class="label-dim">Joined rows</text>
+
+  <!-- Result rows appearing -->
+  <rect x="393" y="108" width="100" height="22" class="row row-result result-r1" />
+  <text x="443" y="123" text-anchor="middle" class="label" font-size="9" style="pointer-events:none; opacity:0; animation: result1 6s ease-in-out infinite">101 + match</text>
+
+  <rect x="393" y="138" width="100" height="22" class="row row-result result-r2" />
+  <text x="443" y="153" text-anchor="middle" class="label" font-size="9" style="pointer-events:none; opacity:0; animation: result2 6s ease-in-out infinite">102 + match</text>
+
+  <rect x="393" y="168" width="100" height="22" class="row row-result result-r3" />
+  <text x="443" y="183" text-anchor="middle" class="label" font-size="9" style="pointer-events:none; opacity:0; animation: result3 6s ease-in-out infinite">103 + match</text>
+
+  <!-- Flow arrows -->
+  <path d="M340,140 L370,140" class="arrow" />
+  <path d="M340,140 Q355,140 370,140" class="arrow" />
+
+  <!-- Legend -->
+  <rect x="20" y="245" width="12" height="12" class="row row-outer" rx="2" opacity="0.9" />
+  <text x="38" y="256" class="label-dim">Current outer row</text>
+
+  <rect x="160" y="245" width="12" height="12" class="row row-inner" rx="2" opacity="0.9" />
+  <text x="178" y="256" class="label-dim">Matched inner row</text>
+
+  <rect x="310" y="245" width="12" height="12" class="row row-result" rx="2" opacity="0.9" />
+  <text x="328" y="256" class="label-dim">Output row</text>
+</svg>

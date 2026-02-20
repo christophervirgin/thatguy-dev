@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Execution Plan Viewer — thatguy.dev</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --text: #eee;
+    --text-dim: #999;
+    --border: #2a2a4a;
+    --green: #4ecca3;
+    --yellow: #f0c040;
+    --blue: #53a8f0;
+    --red: #e94560;
+    --icon-bg: rgba(255,255,255,0.08);
+    --node-bg: #16213e;
+    --node-border: #2a2a4a;
+    --node-warn: rgba(233, 69, 96, 0.3);
+    --edge-color: #4a4a6a;
+    --tooltip-bg: #1a1a2e;
+    --tooltip-border: #2a2a4a;
+    --diagram-text: #e6edf3;
+    --diagram-dim: #8b949e;
+    --diagram-surface: #161b22;
+    --diagram-border: #30363d;
+    --diagram-accent: #58a6ff;
+    --diagram-green: #4ecca3;
+    --diagram-yellow: #f0c040;
+    --drop-bg: rgba(233, 69, 96, 0.05);
+    --drop-border: #e94560;
+  }
+  [data-theme="light"] {
+    --bg: #f0f2f5;
+    --surface: #fff;
+    --surface2: #e8edf2;
+    --accent: #d63050;
+    --text: #1a1a2e;
+    --text-dim: #666;
+    --border: #d0d5dd;
+    --green: #2a8a6a;
+    --yellow: #b08a20;
+    --blue: #2070c0;
+    --red: #d63050;
+    --icon-bg: rgba(0,0,0,0.06);
+    --node-bg: #fff;
+    --node-border: #d0d5dd;
+    --node-warn: rgba(214, 48, 80, 0.12);
+    --edge-color: #b0b5bd;
+    --tooltip-bg: #fff;
+    --tooltip-border: #d0d5dd;
+    --diagram-text: #1f2328;
+    --diagram-dim: #656d76;
+    --diagram-surface: #fff;
+    --diagram-border: #d0d7de;
+    --diagram-accent: #0969da;
+    --diagram-green: #2a8a6a;
+    --diagram-yellow: #b08a20;
+    --drop-bg: rgba(214, 48, 80, 0.04);
+    --drop-border: #d63050;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+    height: 100%;
+    overflow: hidden;
+  }
+  .container { max-width: 90vw; margin: 0 auto; padding: 24px 16px; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 24px; }
+  .subtitle a { color: var(--blue); text-decoration: none; }
+  .subtitle a:hover { text-decoration: underline; }
+
+  /* Breadcrumbs */
+  .breadcrumbs {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    color: var(--text-dim);
+  }
+  .breadcrumbs a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+  .breadcrumbs a:hover { text-decoration: underline; }
+  .breadcrumbs .sep { margin: 0 6px; color: var(--text-dim); }
+
+  #importSection { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+  /* Import area */
+  .import-area {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--surface);
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+  .import-area.drag-over {
+    border-color: var(--drop-border);
+    background: var(--drop-bg);
+  }
+  .import-area h2 { font-size: 1.2rem; margin-bottom: 8px; }
+  .import-area p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+  .import-area .or { color: var(--text-dim); font-size: 0.85rem; margin: 12px 0; }
+
+  .btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn-accent {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-accent:hover { opacity: 0.9; }
+
+  .paste-area {
+    display: none;
+    margin-top: 16px;
+  }
+  .paste-area textarea {
+    width: 100%;
+    height: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    padding: 12px;
+    resize: vertical;
+    outline: none;
+  }
+  .paste-area textarea:focus { border-color: var(--accent); }
+  .paste-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* Plan viewer */
+  #planViewer { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  #planViewer.active { display: flex; }
+
+  .plan-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .plan-toolbar .plan-info {
+    flex: 1;
+    min-width: 200px;
+  }
+  .plan-toolbar .plan-info h2 { font-size: 1.1rem; }
+  .plan-toolbar .plan-info p { font-size: 0.8rem; color: var(--text-dim); }
+
+  .plan-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 120px;
+  }
+  .stat-card.clickable { cursor: pointer; transition: all 0.2s; }
+  .stat-card.clickable:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+  /* Node highlight pulse */
+  .plan-node.highlighted { z-index: 100; }
+  .plan-node.highlighted .node-box {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.4), 0 0 20px rgba(233, 69, 96, 0.2);
+    animation: node-pulse 1.5s ease-in-out 3;
+  }
+  @keyframes node-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(233, 69, 96, 0.2), 0 0 24px rgba(233, 69, 96, 0.3); }
+  }
+  .stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 1.2rem; font-weight: 600; margin-top: 2px; }
+
+  /* Statement tabs */
+  .stmt-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .stmt-tab {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .stmt-tab:hover { border-color: var(--accent); color: var(--text); }
+  .stmt-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Layout controls */
+  .layout-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+  }
+  .layout-controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .layout-controls input[type="range"] {
+    width: 100px;
+    accent-color: var(--accent);
+  }
+  .layout-controls .ctrl-value {
+    font-weight: 600;
+    color: var(--text);
+    min-width: 32px;
+    text-align: center;
+  }
+
+  /* Plan canvas */
+  .plan-canvas-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    flex: 1;
+    cursor: grab;
+  }
+  .plan-canvas-wrap.panning { cursor: grabbing; }
+  .plan-canvas-wrap::-webkit-scrollbar { display: none; }
+  .plan-canvas-wrap.fullscreen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    border-radius: 0;
+    border: 3px solid var(--accent);
+    max-height: none;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Expand/reduce button inside canvas (top-right, fixed to viewport corner) */
+  .canvas-toggle {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10010;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.6;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .canvas-toggle:hover { opacity: 1; border-color: var(--accent); }
+  .plan-canvas-wrap.fullscreen .canvas-toggle { position: fixed; }
+
+  /* Floating controls inside fullscreen canvas (bottom-left, always visible) */
+  .fs-controls {
+    display: none;
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    z-index: 10001;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    gap: 14px;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  .plan-canvas-wrap.fullscreen ~ .fs-controls { display: flex; }
+  .plan-canvas-wrap.fullscreen ~ .fs-controls { bottom: 20px; left: 20px; }
+  .fs-controls label { display: flex; align-items: center; gap: 6px; color: var(--text-dim); white-space: nowrap; }
+  .fs-controls input[type="range"] { width: 90px; accent-color: var(--accent); }
+  .fs-controls .ctrl-value { font-weight: 600; color: var(--text); min-width: 28px; text-align: center; }
+  .fs-controls .fs-btn {
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .fs-controls .fs-btn:hover { border-color: var(--accent); }
+  .plan-canvas {
+    padding: 32px;
+    min-width: fit-content;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+  }
+
+  /* Tree nodes */
+  .plan-node {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .plan-node:hover { transform: scale(1.05); }
+
+  .node-box {
+    background: var(--node-bg);
+    border: 2px solid var(--node-border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+    width: var(--node-w, 140px);
+    height: var(--node-h, 140px);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .plan-node:hover .node-box { border-color: var(--accent); }
+  .node-box.warn { background: var(--node-warn); border-color: var(--red); }
+
+  .node-icon {
+    width: calc(var(--icon-size, 56px) + 4px); height: calc(var(--icon-size, 56px) + 4px);
+    margin: 0 auto 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .node-icon img { width: var(--icon-size, 56px); height: var(--icon-size, 56px); image-rendering: auto; }
+  .node-name { font-size: 0.75rem; font-weight: 600; line-height: 1.2; word-wrap: break-word; overflow-wrap: break-word; }
+  .node-cost { font-size: 0.65rem; color: var(--text-dim); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .node-rows { font-size: 0.65rem; color: var(--green); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .node-warning { font-size: 0.65rem; color: var(--red); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .node-warn-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: help;
+  }
+  .node-object { font-size: 0.6rem; color: var(--text-dim); margin-top: 2px; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Cost bar */
+  .cost-bar {
+    width: 90%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .cost-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  /* Edge lines (SVG overlay) */
+  .plan-edges {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+  }
+  .plan-edge {
+    stroke: var(--edge-color);
+    fill: none;
+    stroke-width: 2;
+  }
+  .plan-edge-thick { stroke-width: 4; opacity: 0.6; }
+  .plan-edge-arrow {
+    fill: var(--edge-color);
+  }
+
+  /* Tooltip */
+  .tooltip {
+    display: none;
+    position: fixed;
+    z-index: 10020;
+    background: var(--tooltip-bg);
+    border: 1px solid var(--tooltip-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+  .tooltip.visible { display: block; }
+  .tooltip-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .tooltip-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--icon-bg); border-radius: 6px; padding: 3px; }
+  .tooltip-icon img { width: 30px; height: 30px; image-rendering: pixelated; }
+  .tooltip-name { font-weight: 600; font-size: 0.95rem; }
+  .tooltip-category { font-size: 0.7rem; color: var(--text-dim); }
+  .tooltip-summary { font-size: 0.82rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 10px; }
+  .tooltip-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.78rem; }
+  .tooltip-stat-label { color: var(--text-dim); }
+  .tooltip-stat-value { font-weight: 600; text-align: right; }
+  .tooltip-perf {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(233, 69, 96, 0.1);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .tooltip-diagram {
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .tooltip-diagram svg { max-width: 100%; height: auto; }
+
+  /* Properties Modal */
+  .prop-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+    justify-content: center;
+    align-items: center;
+  }
+  .prop-overlay.visible { display: flex; }
+  .prop-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 520px;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+  }
+  .prop-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .prop-header-icon {
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--icon-bg);
+    border-radius: 8px;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+  .prop-header-icon img { width: 40px; height: 40px; }
+  .prop-header-info { flex: 1; min-width: 0; }
+  .prop-header-name { font-size: 1.1rem; font-weight: 700; }
+  .prop-header-sub { font-size: 0.8rem; color: var(--text-dim); }
+  .prop-close {
+    width: 32px; height: 32px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .prop-close:hover { border-color: var(--accent); }
+  .prop-body {
+    overflow-y: auto;
+    padding: 0;
+    flex: 1;
+  }
+  .prop-section {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .prop-section:last-child { border-bottom: none; }
+  .prop-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .prop-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 4px 12px;
+    font-size: 0.82rem;
+  }
+  .prop-label { color: var(--text-dim); }
+  .prop-value { font-weight: 500; word-break: break-all; }
+  .prop-value.warn { color: var(--red); }
+  .prop-value.good { color: var(--green); }
+  .prop-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .prop-tag.red { background: rgba(233,69,96,0.15); color: var(--red); }
+  .prop-tag.green { background: rgba(78,204,163,0.15); color: var(--green); }
+  .prop-tag.blue { background: rgba(83,168,240,0.15); color: var(--blue); }
+  .prop-cols {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    background: var(--bg);
+    border-radius: 6px;
+  }
+  .prop-pred {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text);
+    padding: 6px 8px;
+    background: var(--bg);
+    border-radius: 6px;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+  .prop-pred-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+    margin-bottom: 2px;
+  }
+  .prop-warnings {
+    padding: 8px 10px;
+    background: rgba(233, 69, 96, 0.1);
+    border-left: 3px solid var(--red);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: var(--red);
+    line-height: 1.5;
+  }
+  .prop-perf {
+    padding: 8px 10px;
+    background: rgba(83,168,240,0.08);
+    border-left: 3px solid var(--blue);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Anonymization badge */
+  .anon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    background: rgba(78, 204, 163, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(78, 204, 163, 0.3);
+  }
+
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .theme-toggle:hover { border-color: var(--accent); transform: scale(1.1); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 700px) {
+    .plan-stats { gap: 8px; }
+    .stat-card { min-width: 100px; padding: 8px 12px; }
+    .tooltip { max-width: 300px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
+<!-- Properties Modal -->
+<div class="prop-overlay" id="propOverlay">
+  <div class="prop-modal" id="propModal">
+    <div class="prop-header" id="propHeader"></div>
+    <div class="prop-body" id="propBody"></div>
+  </div>
+</div>
+
+<!-- Tooltip (hover overlay) -->
+<div class="tooltip" id="tooltip"></div>
+
+<div class="container">
+  <nav class="breadcrumbs">
+    <a href="/">🏠 Home</a><span class="sep">/</span><a href="/sql/">SQL Tools</a><span class="sep">/</span><span>Execution Plan Viewer</span>
+  </nav>
+  <h1>📊 Execution Plan Viewer</h1>
+  <p class="subtitle">
+    Import a SQL Server execution plan (.sqlplan XML) — auto-anonymized, rendered visually.
+  </p>
+
+  <!-- Import Section -->
+  <div id="importSection">
+    <div class="import-area" id="importArea">
+      <h2>Drop a .sqlplan file here</h2>
+      <p>Or click to browse, or paste XML below</p>
+      <input type="file" id="fileInput" accept=".sqlplan,.xml" style="display:none">
+      <button class="btn" id="browseBtn">📁 Browse Files</button>
+      <div class="or">— or —</div>
+      <button class="btn" id="pasteToggleBtn">📋 Paste XML</button>
+      <div class="paste-area" id="pasteArea">
+        <textarea id="xmlInput" placeholder="Paste your execution plan XML here...&#10;&#10;In SSMS: right-click plan → Save Execution Plan As... → open file → copy contents"></textarea>
+        <div class="paste-actions">
+          <button class="btn" id="pasteCancelBtn">Cancel</button>
+          <button class="btn btn-accent" id="pasteLoadBtn">Load Plan</button>
+        </div>
+      </div>
+    </div>
+    <div id="importError" style="color: var(--red); font-size: 0.85rem; margin-top: 8px; display: none;"></div>
+  </div>
+
+  <!-- Plan Viewer -->
+  <div id="planViewer">
+    <div class="plan-toolbar">
+      <div class="plan-info">
+        <h2 id="planTitle">Execution Plan</h2>
+        <p id="planMeta"></p>
+      </div>
+      <span class="anon-badge" title="Object and server names have been anonymized">🔒 Anonymized</span>
+      <button class="btn" id="newPlanBtn">📁 New Plan</button>
+    </div>
+
+    <div class="plan-stats" id="planStats"></div>
+    <div class="stmt-tabs" id="stmtTabs"></div>
+
+    <div class="layout-controls" id="layoutControls" style="display:none">
+      <label>📦 Card Size
+        <input type="range" id="ctrlCardSize" min="20" max="300" value="100" step="5">
+        <span class="ctrl-value" id="ctrlCardSizeVal">100</span>%
+      </label>
+      <label>↔️ H Gap
+        <input type="range" id="ctrlHGap" min="10" max="100" value="40" step="5">
+        <span class="ctrl-value" id="ctrlHGapVal">40</span>px
+      </label>
+      <label>↕️ V Gap
+        <input type="range" id="ctrlVGap" min="4" max="60" value="16" step="2">
+        <span class="ctrl-value" id="ctrlVGapVal">16</span>px
+      </label>
+      <button class="btn" id="ctrlFitBtn" title="Fit entire plan to window" style="padding:6px 14px;font-size:0.8rem">🔎 Fit to Window</button>
+    </div>
+
+    <div class="plan-canvas-wrap" id="canvasWrap">
+      <button class="canvas-toggle" id="canvasToggle" title="Expand to full screen">⛶</button>
+      <div class="plan-canvas" id="planCanvas">
+        <svg class="plan-edges" id="planEdges"></svg>
+      </div>
+    </div>
+    <div class="fs-controls" id="fsControls">
+      <label>📦 Card Size
+        <input type="range" id="fsCardSize" min="20" max="300" value="100" step="5">
+        <span class="ctrl-value" id="fsCardSizeVal">100</span>%
+      </label>
+      <label>↔️ H Gap
+        <input type="range" id="fsHGap" min="10" max="100" value="40" step="5">
+        <span class="ctrl-value" id="fsHGapVal">40</span>px
+      </label>
+      <label>↕️ V Gap
+        <input type="range" id="fsVGap" min="4" max="60" value="16" step="2">
+        <span class="ctrl-value" id="fsVGapVal">16</span>px
+      </label>
+      <button class="fs-btn" id="fsFitBtn" title="Fit entire plan to window">🔎 Fit to Window</button>
+    </div>
+  </div>
+</div>
+
+<script src="../operators.js"></script>
+<script>
+// ── Operator lookup ──
+const opMap = Object.fromEntries(operators.map(op => [op.name, op]));
+
+// Also build a fuzzy lookup for XML PhysicalOp/LogicalOp → our operator name
+const opNameAliases = {};
+operators.forEach(op => {
+  // Normalize: "Clustered Index Scan" → "clusteredindexscan"
+  opNameAliases[op.name.toLowerCase().replace(/[\s\/()]/g, '')] = op;
+});
+
+function findOperator(physicalOp, logicalOp) {
+  // Try exact match first
+  if (opMap[physicalOp]) return opMap[physicalOp];
+  if (opMap[logicalOp]) return opMap[logicalOp];
+
+  // Try normalized
+  const normP = (physicalOp || '').toLowerCase().replace(/[\s\/()]/g, '');
+  const normL = (logicalOp || '').toLowerCase().replace(/[\s\/()]/g, '');
+  if (opNameAliases[normP]) return opNameAliases[normP];
+  if (opNameAliases[normL]) return opNameAliases[normL];
+
+  // Partial match
+  for (const op of operators) {
+    const normName = op.name.toLowerCase().replace(/[\s\/()]/g, '');
+    if (normP.includes(normName) || normName.includes(normP)) return op;
+    if (normL.includes(normName) || normName.includes(normL)) return op;
+  }
+  return null;
+}
+
+// ── Anonymization ──
+let anonCounter = 0;
+const anonMap = {};
+
+function anonymize(name) {
+  if (!name) return name;
+  // Strip [brackets] and split by .
+  const clean = name.replace(/\[/g, '').replace(/\]/g, '');
+  const parts = clean.split('.');
+  return parts.map(part => {
+    if (!anonMap[part]) {
+      anonCounter++;
+      // Guess the type based on common patterns
+      if (parts.length >= 3 && part === parts[0]) anonMap[part] = `Database${anonCounter}`;
+      else if (parts.length >= 3 && part === parts[1]) anonMap[part] = `Schema${anonCounter}`;
+      else if (part.toLowerCase().startsWith('ix_') || part.toLowerCase().startsWith('pk_') || part.toLowerCase().startsWith('cx_') || part.toLowerCase().startsWith('idx_'))
+        anonMap[part] = `Index${anonCounter}`;
+      else anonMap[part] = `Object${anonCounter}`;
+    }
+    return anonMap[part];
+  }).join('.');
+}
+
+// ── XML Parsing ──
+function parsePlan(xmlText) {
+  anonCounter = 0;
+  Object.keys(anonMap).forEach(k => delete anonMap[k]);
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+
+  if (doc.querySelector('parsererror')) {
+    throw new Error('Invalid XML. Make sure you\'re pasting the full .sqlplan XML content.');
+  }
+
+  // Handle namespace
+  const ns = doc.documentElement.namespaceURI || '';
+  const nsResolver = ns ? (prefix) => ns : null;
+
+  function qsa(el, tag) {
+    return ns
+      ? Array.from(el.getElementsByTagNameNS(ns, tag))
+      : Array.from(el.getElementsByTagName(tag));
+  }
+  function qa(el, attr) { return el.getAttribute(attr); }
+
+  const statements = [];
+  const stmtElements = qsa(doc, 'StmtSimple');
+
+  stmtElements.forEach((stmtEl, idx) => {
+    const stmtText = qa(stmtEl, 'StatementText') || `Statement ${idx + 1}`;
+    const stmtCost = parseFloat(qa(stmtEl, 'StatementSubTreeCost') || '0');
+    const stmtType = qa(stmtEl, 'StatementType') || '';
+
+    // Parse the RelOp tree
+    const topRelOps = qsa(stmtEl, 'RelOp');
+    if (topRelOps.length === 0) return;
+
+    // Get only the direct first RelOp (root of the tree)
+    // Find the QueryPlan element first
+    const queryPlan = qsa(stmtEl, 'QueryPlan')[0];
+    if (!queryPlan) return;
+
+    const rootRelOp = qsa(queryPlan, 'RelOp')[0];
+    if (!rootRelOp) return;
+
+    // Anonymize SQL expressions (bracket-delimited identifiers)
+    function anonymizeExpression(expr) {
+      return expr.replace(/\[([^\]]+)\]/g, (m, name) => '[' + (anonMap[name] || anonymize(name)) + ']');
+    }
+
+    let nodeIdCounter = 0;
+    function parseRelOp(relOpEl) {
+      const nodeId = 'node-' + (nodeIdCounter++);
+      const physOp = qa(relOpEl, 'PhysicalOp') || '';
+      const logOp = qa(relOpEl, 'LogicalOp') || '';
+      const estRows = parseFloat(qa(relOpEl, 'EstimateRows') || '0');
+      const estCPU = parseFloat(qa(relOpEl, 'EstimateCPU') || '0');
+      const estIO = parseFloat(qa(relOpEl, 'EstimateIO') || '0');
+      const subtreeCost = parseFloat(qa(relOpEl, 'EstimatedTotalSubtreeCost') || '0');
+      const parallel = qa(relOpEl, 'Parallel') === '1' || qa(relOpEl, 'Parallel') === 'true';
+      const estExec = parseFloat(qa(relOpEl, 'EstimateExecutions') || '1');
+
+      // Get actual rows if present (actual execution plan)
+      const runtimeInfo = qsa(relOpEl, 'RunTimeInformation')[0];
+      let actualRows = null;
+      if (runtimeInfo) {
+        const rtThread = qsa(runtimeInfo, 'RunTimeCountersPerThread')[0];
+        if (rtThread) {
+          actualRows = parseInt(qa(rtThread, 'ActualRows') || '0');
+        }
+      }
+
+      // Get object name for anonymization
+      let objectName = '';
+      // Look in immediate children for the physical op element
+      const children = relOpEl.children;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        const objEls = qsa(child, 'Object');
+        if (objEls.length > 0) {
+          const objEl = objEls[0];
+          const parts = [];
+          const db = qa(objEl, 'Database');
+          const schema = qa(objEl, 'Schema');
+          const table = qa(objEl, 'Table');
+          const index = qa(objEl, 'Index');
+          if (db) parts.push(db);
+          if (schema) parts.push(schema);
+          if (table) parts.push(table);
+          objectName = anonymize(parts.join('.'));
+          if (index) objectName += ' (' + anonymize(index) + ')';
+          break;
+        }
+      }
+
+      // Warnings
+      const warnings = [];
+      const warnEls = qsa(relOpEl, 'Warnings');
+      warnEls.forEach(w => {
+        qsa(w, 'NoJoinPredicate').forEach(() => warnings.push('No Join Predicate'));
+        qsa(w, 'SpillToTempDb').forEach(s => {
+          const level = qa(s, 'SpillLevel');
+          warnings.push(`Spill to TempDb${level ? ` (Level ${level})` : ''}`);
+        });
+        qsa(w, 'ColumnsWithNoStatistics').forEach(() => warnings.push('Missing Statistics'));
+        // Generic warnings
+        if (w.children.length === 0 && w.textContent) warnings.push(w.textContent.trim());
+      });
+
+      // Check for expensive scans
+      const opInfo = findOperator(physOp, logOp);
+      if (opInfo && estRows > 10000 && (physOp.includes('Scan') || logOp.includes('Scan'))) {
+        warnings.push('Large scan: ' + Math.round(estRows).toLocaleString() + ' rows');
+      }
+
+      // ── Extended Properties (SSMS-style) ──
+      const estRowSize = parseFloat(qa(relOpEl, 'AvgRowSize') || '0');
+      const estRebinds = parseFloat(qa(relOpEl, 'EstimateRebinds') || '0');
+      const estRewinds = parseFloat(qa(relOpEl, 'EstimateRewinds') || '0');
+      const nodeId2 = qa(relOpEl, 'NodeId') || '';
+      const memoryGrant = parseFloat(qa(relOpEl, 'MemoryGrant') || '0');
+      const ordered = qa(relOpEl, 'Ordered');
+
+      // Output columns
+      const outputCols = [];
+      const outputListEl = qsa(relOpEl, 'OutputList')[0];
+      if (outputListEl) {
+        const colRefs = qsa(outputListEl, 'ColumnReference');
+        colRefs.forEach(cr => {
+          const col = qa(cr, 'Column') || '';
+          const tbl = qa(cr, 'Table') || '';
+          if (col) outputCols.push(tbl ? anonymize(tbl) + '.' + anonymize(col) : anonymize(col));
+        });
+      }
+
+      // Predicates / seek predicates / hash keys
+      const predicates = [];
+      function extractPredicates(parentEl, label) {
+        // Look for common predicate containers
+        ['SeekPredicates', 'Predicate', 'HashKeysBuild', 'HashKeysProbe', 'ProbeResidual', 'StartRange', 'EndRange'].forEach(tag => {
+          const els = qsa(parentEl, tag);
+          els.forEach(el => {
+            // Try to get scalar operator string or column references
+            const scalarOps = qsa(el, 'ScalarOperator');
+            scalarOps.forEach(so => {
+              const val = qa(so, 'ScalarString');
+              if (val) predicates.push({ label: tag, value: anonymizeExpression(val) });
+            });
+            // Column references as fallback
+            if (scalarOps.length === 0) {
+              const cols = qsa(el, 'ColumnReference');
+              if (cols.length > 0) {
+                const colStr = Array.from(cols).map(cr => {
+                  const c = qa(cr, 'Column') || '';
+                  const t = qa(cr, 'Table') || '';
+                  return t ? anonymize(t) + '.' + anonymize(c) : anonymize(c);
+                }).join(', ');
+                predicates.push({ label: tag, value: colStr });
+              }
+            }
+          });
+        });
+      }
+      // Search in the physical op child elements (not nested RelOps)
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].localName !== 'RelOp') {
+          extractPredicates(children[i], children[i].localName);
+        }
+      }
+
+      // Runtime stats (actual plan)
+      let actualElapsed = null, actualExec = null, actualRowsRead = null;
+      if (runtimeInfo) {
+        const threads = qsa(runtimeInfo, 'RunTimeCountersPerThread');
+        threads.forEach(t => {
+          const elapsed = parseFloat(qa(t, 'ActualElapsedms') || '0');
+          const exec = parseInt(qa(t, 'ActualExecutions') || '0');
+          const rowsRead = parseInt(qa(t, 'ActualRowsRead') || '0');
+          if (elapsed) actualElapsed = (actualElapsed || 0) + elapsed;
+          if (exec) actualExec = (actualExec || 0) + exec;
+          if (rowsRead) actualRowsRead = (actualRowsRead || 0) + rowsRead;
+        });
+      }
+
+      // Memory fractions
+      const memFraction = qsa(relOpEl, 'MemoryFractions')[0];
+      let memInput = null, memOutput = null;
+      if (memFraction) {
+        memInput = parseFloat(qa(memFraction, 'Input') || '0');
+        memOutput = parseFloat(qa(memFraction, 'Output') || '0');
+      }
+
+      // Recurse into child RelOps
+      const childRelOps = [];
+      // Direct children of this RelOp's physical op element
+      for (let i = 0; i < children.length; i++) {
+        const childEl = children[i];
+        if (childEl.localName === 'RelOp') {
+          // Direct child RelOp (shouldn't happen normally)
+          childRelOps.push(parseRelOp(childEl));
+        } else {
+          // Look inside the physical op element for nested RelOps
+          const nestedRelOps = Array.from(childEl.children).filter(c => c.localName === 'RelOp');
+          nestedRelOps.forEach(nr => childRelOps.push(parseRelOp(nr)));
+
+          // Go one more level deep (some ops nest RelOps inside sub-elements)
+          Array.from(childEl.children).forEach(subChild => {
+            if (subChild.localName !== 'RelOp') {
+              Array.from(subChild.children).filter(c => c.localName === 'RelOp')
+                .forEach(nr => childRelOps.push(parseRelOp(nr)));
+            }
+          });
+        }
+      }
+
+      const nodeCost = estCPU + estIO;
+
+      return {
+        _id: nodeId,
+        physicalOp: physOp,
+        logicalOp: logOp,
+        operatorInfo: opInfo,
+        estimatedRows: estRows,
+        actualRows,
+        estimatedCPU: estCPU,
+        estimatedIO: estIO,
+        nodeCost,
+        subtreeCost,
+        parallel,
+        estimatedExecutions: estExec,
+        objectName,
+        warnings,
+        children: childRelOps,
+        // Extended
+        nodeId2,
+        estRowSize,
+        estRebinds,
+        estRewinds,
+        ordered,
+        memoryGrant,
+        outputCols,
+        predicates,
+        actualElapsed,
+        actualExec,
+        actualRowsRead,
+        memInput,
+        memOutput,
+      };
+    }
+
+    const tree = parseRelOp(rootRelOp);
+
+    // Compute cost percentages
+    const totalCost = tree.subtreeCost || 1;
+    function assignCostPct(node) {
+      node.costPct = (node.nodeCost / totalCost) * 100;
+      node.subtreePct = (node.subtreeCost / totalCost) * 100;
+      node.children.forEach(assignCostPct);
+    }
+    assignCostPct(tree);
+
+    statements.push({
+      text: stmtText.trim().substring(0, 200),
+      cost: stmtCost,
+      type: stmtType,
+      tree,
+    });
+  });
+
+  if (statements.length === 0) {
+    throw new Error('No execution plan statements found in the XML.');
+  }
+
+  return { statements };
+}
+
+// ── Layout Engine ──
+let NODE_W = 140;
+let NODE_H = 140;
+let H_GAP = 40;
+let V_GAP = 16;
+let ICON_SIZE = 56;
+
+function layoutTree(node, depth = 0) {
+  // Post-order: layout children first
+  if (node.children.length === 0) {
+    node._w = NODE_W;
+    node._h = NODE_H;
+    node._depth = depth;
+    return;
+  }
+
+  node.children.forEach(c => layoutTree(c, depth + 1));
+
+  const childrenHeight = node.children.reduce((sum, c) => sum + c._totalH, 0)
+    + (node.children.length - 1) * V_GAP;
+
+  node._w = NODE_W;
+  node._h = NODE_H;
+  node._childrenH = childrenHeight;
+  node._depth = depth;
+}
+
+function assignSizes(node) {
+  if (node.children.length === 0) {
+    node._totalW = NODE_W;
+    node._totalH = NODE_H;
+    return;
+  }
+  node.children.forEach(assignSizes);
+  const maxChildW = Math.max(...node.children.map(c => c._totalW));
+  node._totalW = NODE_W + H_GAP + maxChildW;
+  const childrenH = node.children.reduce((s, c) => s + c._totalH, 0)
+    + (node.children.length - 1) * V_GAP;
+  node._totalH = Math.max(NODE_H, childrenH);
+}
+
+function positionNodes(node, x, y) {
+  node._x = x;
+  node._y = y; // top-aligned like SSMS
+
+  if (node.children.length === 0) return;
+
+  let childY = y;
+  const childX = x + NODE_W + H_GAP;
+  node.children.forEach(child => {
+    positionNodes(child, childX, childY);
+    childY += child._totalH + V_GAP;
+  });
+}
+
+// ── Rendering ──
+function renderPlan(stmt) {
+  const tree = stmt.tree;
+  assignSizes(tree);
+  positionNodes(tree, 32, 32);
+  panX = 0; panY = 0; panScale = 1;
+
+  const canvas = document.getElementById('planCanvas');
+  const edgesSvg = document.getElementById('planEdges');
+
+  // Clear
+  canvas.querySelectorAll('.plan-node').forEach(n => n.remove());
+  edgesSvg.innerHTML = '';
+
+  const totalW = tree._totalW + 96;
+  const totalH = tree._totalH + 96;
+  canvas.style.width = totalW + 'px';
+  canvas.style.height = totalH + 'px';
+  edgesSvg.setAttribute('width', totalW);
+  edgesSvg.setAttribute('height', totalH);
+
+  // Find max node cost for coloring
+  let maxNodeCost = 0;
+  function findMaxCost(n) {
+    if (n.costPct > maxNodeCost) maxNodeCost = n.costPct;
+    n.children.forEach(findMaxCost);
+  }
+  findMaxCost(tree);
+
+  function costColor(pct) {
+    if (pct > 30) return 'var(--red)';
+    if (pct > 10) return 'var(--yellow)';
+    return 'var(--green)';
+  }
+
+  function renderNode(node) {
+    const opInfo = node.operatorInfo;
+    const displayName = node.physicalOp || node.logicalOp || 'Unknown';
+    const icon = opInfo ? opInfo.icon : 'icon-iterator-catch-all';
+    const hasWarning = node.warnings.length > 0;
+
+    const el = document.createElement('div');
+    el.className = 'plan-node';
+    el.id = node._id;
+    el.style.left = node._x + 'px';
+    el.style.top = node._y + 'px';
+
+    const costBarWidth = maxNodeCost > 0 ? Math.max(2, (node.costPct / maxNodeCost) * 100) : 0;
+    const rowsText = node.actualRows !== null
+      ? `${node.actualRows.toLocaleString()} actual`
+      : `~${Math.round(node.estimatedRows).toLocaleString()} est.`;
+
+    // Adaptive content based on card size
+    // Priority: icon always, then progressively more detail
+    const size = NODE_H;
+
+    // Get schema.object (last two segments before any parenthetical index)
+    let shortObject = '';
+    if (node.objectName) {
+      const base = node.objectName.split(' (')[0];
+      const parts = base.split('.');
+      shortObject = parts.length >= 2 ? parts.slice(-2).join('.') : parts[parts.length - 1];
+    }
+
+    // Abbreviation map for common operators
+    const abbreviations = {
+      'Clustered Index Scan': 'CI Scan',
+      'Clustered Index Seek': 'CI Seek',
+      'Nonclustered Index Scan': 'NCI Scan',
+      'Nonclustered Index Seek': 'NCI Seek',
+      'Nonclustered Index Spool': 'NCI Spool',
+      'Clustered Index Insert': 'CI Insert',
+      'Clustered Index Update': 'CI Update',
+      'Clustered Index Delete': 'CI Delete',
+      'Clustered Index Merge': 'CI Merge',
+      'Nonclustered Index Insert': 'NCI Insert',
+      'Nonclustered Index Update': 'NCI Update',
+      'Nonclustered Index Delete': 'NCI Delete',
+      'Hash Match': 'Hash',
+      'Nested Loops': 'NL Join',
+      'Merge Join': 'Merge',
+      'Sort': 'Sort',
+      'Stream Aggregate': 'Str Agg',
+      'Hash Aggregate': 'Hash Agg',
+      'Compute Scalar': 'Compute',
+      'Table Scan': 'Tbl Scan',
+      'Table Spool': 'Tbl Spool',
+      'Index Spool': 'Idx Spool',
+      'Parallelism': '‖',
+      'Distribute Streams': '‖ Dist',
+      'Gather Streams': '‖ Gather',
+      'Repartition Streams': '‖ Repart',
+      'Bitmap Create': 'Bitmap',
+      'Key Lookup': 'Key Lkp',
+      'RID Lookup': 'RID Lkp',
+      'Filter': 'Filter',
+      'Top': 'Top',
+      'Concatenation': 'Concat',
+      'Constant Scan': 'Const',
+      'Sequence Project': 'Seq Proj',
+      'Segment': 'Seg',
+      'Window Spool': 'Win Spool',
+      'Adaptive Join': 'Adapt Join',
+      'Columnstore Index Scan': 'CS Scan',
+      'Batch Hash Table Build': 'Batch HT',
+    };
+
+    function getDisplayName(fullName, cardSize) {
+      if (cardSize >= 90) return fullName;
+      if (cardSize >= 60) return abbreviations[fullName] || (fullName.length > 12 ? fullName.substring(0, 10) + '…' : fullName);
+      return abbreviations[fullName] || (fullName.length > 8 ? fullName.substring(0, 6) + '…' : fullName);
+    }
+
+    const label = getDisplayName(displayName, size);
+
+    let boxContent = '';
+
+    if (size < 50) {
+      // Tiny: icon + short object name only
+      boxContent += `<div class="node-icon"><img src="../icons/${icon}.png" alt="${displayName}" onerror="this.parentElement.textContent='⚙️'"></div>`;
+      if (shortObject) boxContent += `<div class="node-name" style="font-size:0.55rem">${shortObject.length > 10 ? shortObject.substring(0, 8) + '…' : shortObject}</div>`;
+      if (hasWarning) boxContent += `<div class="node-warn-badge" title="${node.warnings.join(', ')}">⚠️</div>`;
+    } else {
+      const showCost = size >= 80;
+      const showRows = size >= 100;
+      const showWarningText = size >= 130 && hasWarning;
+      const showObject = size >= 130 && node.objectName;
+      const showCostBar = size >= 90;
+
+      boxContent += `<div class="node-icon"><img src="../icons/${icon}.png" alt="${displayName}" onerror="this.parentElement.textContent='⚙️'"></div>`;
+      boxContent += `<div class="node-name">${label}</div>`;
+      if (showCost) boxContent += `<div class="node-cost">${node.costPct.toFixed(1)}%</div>`;
+      if (showRows) boxContent += `<div class="node-rows">${rowsText}</div>`;
+      if (showWarningText) boxContent += `<div class="node-warning">⚠️ ${node.warnings[0]}</div>`;
+      if (showObject) boxContent += `<div class="node-object">${shortObject}</div>`;
+      if (showCostBar) boxContent += `<div class="cost-bar"><div class="cost-bar-fill" style="width:${costBarWidth}%;background:${costColor(node.costPct)}"></div></div>`;
+
+      // Small cards: warning badge in bottom-left corner, no text
+      if (!showWarningText && hasWarning) {
+        boxContent += `<div class="node-warn-badge" title="${node.warnings.join(', ')}">⚠️</div>`;
+      }
+    }
+
+    el.innerHTML = `<div class="node-box${hasWarning ? ' warn' : ''}">${boxContent}</div>`;
+
+    // Hover tooltip
+    el.addEventListener('mouseenter', (e) => showTooltip(e, node));
+    el.addEventListener('mousemove', (e) => moveTooltip(e));
+    el.addEventListener('mouseleave', hideTooltip);
+
+    // Click to open properties modal
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideTooltip();
+      showPropertiesModal(node);
+    });
+
+    canvas.appendChild(el);
+
+    // Draw edges to children — lines connect at card borders with gap
+    node.children.forEach(child => {
+      const gap = 6; // space between line end and card border
+      const x1 = node._x + NODE_W + gap;
+      const y1 = node._y + NODE_H / 2;
+      const x2 = child._x - gap;
+      const y2 = child._y + NODE_H / 2;
+      const midX = (x1 + x2) / 2;
+
+      // Thicker lines for higher row counts
+      const rowMagnitude = Math.log10(Math.max(1, child.estimatedRows));
+      const strokeW = Math.min(6, Math.max(1.5, rowMagnitude));
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`);
+      path.setAttribute('class', 'plan-edge');
+      path.setAttribute('stroke-width', strokeW);
+      edgesSvg.appendChild(path);
+
+      // Arrow pointing at child card
+      const arrowSize = Math.min(5, strokeW + 1);
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      arrow.setAttribute('points', `${x2},${y2-arrowSize} ${x2+arrowSize+2},${y2} ${x2},${y2+arrowSize}`);
+      arrow.setAttribute('class', 'plan-edge-arrow');
+      edgesSvg.appendChild(arrow);
+    });
+
+    node.children.forEach(renderNode);
+  }
+
+  renderNode(tree);
+  applyTransform();
+}
+
+// ── Tooltip ──
+const tooltip = document.getElementById('tooltip');
+const diagramCache = {};
+
+function showTooltip(e, node) {
+  const opInfo = node.operatorInfo;
+  const displayName = node.physicalOp || node.logicalOp || 'Unknown';
+  const icon = opInfo ? opInfo.icon : 'icon-iterator-catch-all';
+
+  let html = `
+    <div class="tooltip-header">
+      <div class="tooltip-icon"><img src="../icons/${icon}.png" alt="${displayName}" onerror="this.parentElement.textContent='⚙️'"></div>
+      <div>
+        <div class="tooltip-name">${displayName}</div>
+        <div class="tooltip-category">${opInfo ? opInfo.category : 'Unknown'}</div>
+      </div>
+    </div>
+    <div class="tooltip-summary">${opInfo ? opInfo.summary : ''}</div>
+    <div class="tooltip-stats">
+      <div class="tooltip-stat-label">Node Cost</div>
+      <div class="tooltip-stat-value">${node.costPct.toFixed(1)}%</div>
+      <div class="tooltip-stat-label">Subtree Cost</div>
+      <div class="tooltip-stat-value">${node.subtreePct.toFixed(1)}%</div>
+      <div class="tooltip-stat-label">Est. Rows</div>
+      <div class="tooltip-stat-value">${Math.round(node.estimatedRows).toLocaleString()}</div>
+      ${node.actualRows !== null ? `
+        <div class="tooltip-stat-label">Actual Rows</div>
+        <div class="tooltip-stat-value">${node.actualRows.toLocaleString()}</div>
+      ` : ''}
+      <div class="tooltip-stat-label">Est. CPU</div>
+      <div class="tooltip-stat-value">${node.estimatedCPU.toFixed(6)}</div>
+      <div class="tooltip-stat-label">Est. I/O</div>
+      <div class="tooltip-stat-value">${node.estimatedIO.toFixed(6)}</div>
+      ${node.parallel ? `
+        <div class="tooltip-stat-label">Parallel</div>
+        <div class="tooltip-stat-value">✅ Yes</div>
+      ` : ''}
+      ${node.estimatedExecutions > 1 ? `
+        <div class="tooltip-stat-label">Executions</div>
+        <div class="tooltip-stat-value">${Math.round(node.estimatedExecutions).toLocaleString()}</div>
+      ` : ''}
+    </div>
+  `;
+
+  if (node.warnings.length > 0) {
+    html += `<div class="tooltip-perf">⚠️ ${node.warnings.join(' · ')}</div>`;
+  } else if (opInfo && opInfo.perf) {
+    html += `<div class="tooltip-perf">💡 ${opInfo.perf}</div>`;
+  }
+
+  tooltip.innerHTML = html;
+  tooltip.classList.add('visible');
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const pad = 16;
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+  const rect = tooltip.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth - pad) x = e.clientX - rect.width - pad;
+  if (y + rect.height > window.innerHeight - pad) y = e.clientY - rect.height - pad;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+}
+
+// ── UI Logic ──
+const importSection = document.getElementById('importSection');
+const planViewer = document.getElementById('planViewer');
+const importArea = document.getElementById('importArea');
+const fileInput = document.getElementById('fileInput');
+const browseBtn = document.getElementById('browseBtn');
+const pasteToggleBtn = document.getElementById('pasteToggleBtn');
+const pasteArea = document.getElementById('pasteArea');
+const xmlInput = document.getElementById('xmlInput');
+const pasteCancelBtn = document.getElementById('pasteCancelBtn');
+const pasteLoadBtn = document.getElementById('pasteLoadBtn');
+const importError = document.getElementById('importError');
+const newPlanBtn = document.getElementById('newPlanBtn');
+const stmtTabs = document.getElementById('stmtTabs');
+const planStats = document.getElementById('planStats');
+
+let currentPlan = null;
+let currentStmtIdx = 0;
+
+browseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+importArea.addEventListener('click', (e) => {
+  if (e.target === importArea || e.target.tagName === 'H2' || e.target.tagName === 'P') {
+    fileInput.click();
+  }
+});
+
+pasteToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  pasteArea.style.display = pasteArea.style.display === 'none' || !pasteArea.style.display ? 'block' : 'none';
+  if (pasteArea.style.display === 'block') xmlInput.focus();
+});
+
+pasteCancelBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  pasteArea.style.display = 'none';
+  xmlInput.value = '';
+});
+
+pasteLoadBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  loadXml(xmlInput.value);
+});
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => loadXml(reader.result);
+  reader.readAsText(file);
+});
+
+// Drag & drop
+importArea.addEventListener('dragover', (e) => { e.preventDefault(); importArea.classList.add('drag-over'); });
+importArea.addEventListener('dragleave', () => importArea.classList.remove('drag-over'));
+importArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  importArea.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => loadXml(reader.result);
+    reader.readAsText(file);
+  }
+});
+
+newPlanBtn.addEventListener('click', () => {
+  importSection.style.display = 'block';
+  planViewer.classList.remove('active');
+  layoutControls.style.display = 'none';
+  currentPlan = null;
+  xmlInput.value = '';
+  fileInput.value = '';
+  importError.style.display = 'none';
+});
+
+function loadXml(xmlText) {
+  importError.style.display = 'none';
+  try {
+    currentPlan = parsePlan(xmlText);
+    currentStmtIdx = 0;
+    showPlan();
+  } catch (err) {
+    importError.textContent = '❌ ' + err.message;
+    importError.style.display = 'block';
+  }
+}
+
+function showPlan() {
+  importSection.style.display = 'none';
+  planViewer.classList.add('active');
+  layoutControls.style.display = 'flex';
+
+  const plan = currentPlan;
+
+  // Statement tabs
+  stmtTabs.innerHTML = '';
+  if (plan.statements.length > 1) {
+    plan.statements.forEach((stmt, idx) => {
+      const tab = document.createElement('button');
+      tab.className = 'stmt-tab' + (idx === currentStmtIdx ? ' active' : '');
+      const costPct = plan.statements.length > 1
+        ? ` (${(stmt.cost / plan.statements.reduce((s, st) => s + st.cost, 0) * 100).toFixed(0)}%)`
+        : '';
+      tab.textContent = `${stmt.type || 'Statement'} ${idx + 1}${costPct}`;
+      tab.title = stmt.text;
+      tab.addEventListener('click', () => {
+        currentStmtIdx = idx;
+        showPlan();
+      });
+      stmtTabs.appendChild(tab);
+    });
+  }
+
+  const stmt = plan.statements[currentStmtIdx];
+
+  // Count operators and find issues
+  let opCount = 0, warnCount = 0, maxCostOp = null;
+  const warnNodes = [];
+  function countOps(node) {
+    opCount++;
+    if (node.warnings.length) { warnCount++; warnNodes.push(node); }
+    if (!maxCostOp || node.costPct > maxCostOp.costPct) maxCostOp = node;
+    node.children.forEach(countOps);
+  }
+  countOps(stmt.tree);
+
+  // Stats
+  planStats.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Operators</div>
+      <div class="stat-value">${opCount}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Subtree Cost</div>
+      <div class="stat-value">${stmt.tree.subtreeCost.toFixed(4)}</div>
+    </div>
+    <div class="stat-card clickable" id="statMostExpensive" title="Click to focus most expensive operator">
+      <div class="stat-label">Most Expensive</div>
+      <div class="stat-value" style="font-size:0.85rem">${maxCostOp ? maxCostOp.physicalOp : '—'}</div>
+    </div>
+    ${warnCount > 0 ? `
+      <div class="stat-card clickable" id="statWarnings" style="border-color: var(--red); background: var(--node-warn)" title="Click to cycle through warnings">
+        <div class="stat-label" style="color: var(--red)">⚠️ Warnings</div>
+        <div class="stat-value" style="color: var(--red)">${warnCount}</div>
+      </div>
+    ` : ''}
+  `;
+
+  // Wire stat card clicks
+  if (maxCostOp) {
+    document.getElementById('statMostExpensive').addEventListener('click', () => focusNode(maxCostOp._id));
+  }
+  if (warnCount > 0) {
+    let warnIdx = 0;
+    document.getElementById('statWarnings').addEventListener('click', () => {
+      focusNode(warnNodes[warnIdx]._id);
+      warnIdx = (warnIdx + 1) % warnNodes.length;
+    });
+  }
+
+  renderPlan(stmt);
+}
+
+// ── Layout Controls ──
+const layoutControls = document.getElementById('layoutControls');
+const BASE_NODE_S = 140, BASE_ICON = 56, BASE_HGAP = 40, BASE_VGAP = 16;
+
+function applyCardSize(pct) {
+  const scale = pct / 100;
+  NODE_W = Math.round(BASE_NODE_S * scale);
+  NODE_H = NODE_W; // always square
+  ICON_SIZE = Math.round(BASE_ICON * scale);
+  document.documentElement.style.setProperty('--icon-size', ICON_SIZE + 'px');
+  document.documentElement.style.setProperty('--node-w', NODE_W + 'px');
+  document.documentElement.style.setProperty('--node-h', NODE_H + 'px');
+}
+
+const sliders = {
+  ctrlCardSize: { get val() { return document.getElementById('ctrlCardSizeVal'); }, set: v => applyCardSize(v) },
+  ctrlHGap: { get val() { return document.getElementById('ctrlHGapVal'); }, set: v => { H_GAP = v; }},
+  ctrlVGap: { get val() { return document.getElementById('ctrlVGapVal'); }, set: v => { V_GAP = v; }},
+};
+Object.entries(sliders).forEach(([id, s]) => {
+  const input = document.getElementById(id);
+  input.addEventListener('input', () => {
+    const v = parseInt(input.value);
+    s.val.textContent = v;
+    s.set(v);
+    if (currentPlan) renderPlan(currentPlan.statements[currentStmtIdx]);
+  });
+});
+
+// ── Properties Modal ──
+const propOverlay = document.getElementById('propOverlay');
+const propHeader = document.getElementById('propHeader');
+const propBody = document.getElementById('propBody');
+
+function showPropertiesModal(node) {
+  const opInfo = node.operatorInfo;
+  const displayName = node.physicalOp || node.logicalOp || 'Unknown';
+  const icon = opInfo ? opInfo.icon : 'icon-iterator-catch-all';
+  const category = opInfo ? opInfo.category : 'Unknown';
+
+  propHeader.innerHTML = `
+    <div class="prop-header-icon"><img src="../icons/${icon}.png" alt="" onerror="this.parentElement.textContent='⚙️'"></div>
+    <div class="prop-header-info">
+      <div class="prop-header-name">${displayName}</div>
+      <div class="prop-header-sub">${node.logicalOp !== node.physicalOp && node.logicalOp ? 'Logical: ' + node.logicalOp + ' · ' : ''}${category}${node.nodeId2 ? ' · Node #' + node.nodeId2 : ''}</div>
+    </div>
+    <button class="prop-close" id="propClose" title="Close">✕</button>
+  `;
+
+  let html = '';
+
+  // Description
+  if (opInfo && opInfo.summary) {
+    html += `<div class="prop-section"><div class="prop-perf">${opInfo.summary}</div></div>`;
+  }
+
+  // Warnings
+  if (node.warnings.length > 0) {
+    html += `<div class="prop-section">
+      <div class="prop-section-title">⚠️ Warnings</div>
+      <div class="prop-warnings">${node.warnings.map(w => '• ' + w).join('<br>')}</div>
+    </div>`;
+  }
+
+  // Estimated Stats
+  html += `<div class="prop-section">
+    <div class="prop-section-title">Estimated Execution</div>
+    <div class="prop-grid">
+      <div class="prop-label">Operator Cost</div>
+      <div class="prop-value">${node.costPct.toFixed(2)}% <span style="color:var(--text-dim)">(${node.nodeCost.toFixed(6)})</span></div>
+      <div class="prop-label">Subtree Cost</div>
+      <div class="prop-value">${node.subtreePct.toFixed(2)}% <span style="color:var(--text-dim)">(${node.subtreeCost.toFixed(6)})</span></div>
+      <div class="prop-label">Estimated CPU</div>
+      <div class="prop-value">${node.estimatedCPU.toFixed(6)}</div>
+      <div class="prop-label">Estimated I/O</div>
+      <div class="prop-value">${node.estimatedIO.toFixed(6)}</div>
+      <div class="prop-label">Estimated Rows</div>
+      <div class="prop-value">${Math.round(node.estimatedRows).toLocaleString()}</div>
+      ${node.estRowSize ? `<div class="prop-label">Avg Row Size</div><div class="prop-value">${node.estRowSize} B</div>` : ''}
+      <div class="prop-label">Estimated Executions</div>
+      <div class="prop-value">${node.estimatedExecutions.toLocaleString()}</div>
+      ${node.estRebinds ? `<div class="prop-label">Rebinds</div><div class="prop-value">${node.estRebinds}</div>` : ''}
+      ${node.estRewinds ? `<div class="prop-label">Rewinds</div><div class="prop-value">${node.estRewinds}</div>` : ''}
+      <div class="prop-label">Parallel</div>
+      <div class="prop-value">${node.parallel ? '<span class="prop-tag blue">Yes</span>' : 'No'}</div>
+      ${node.ordered !== null && node.ordered !== undefined ? `<div class="prop-label">Ordered</div><div class="prop-value">${node.ordered === 'true' || node.ordered === '1' ? '<span class="prop-tag green">True</span>' : '<span class="prop-tag red">False</span>'}</div>` : ''}
+      ${node.memoryGrant ? `<div class="prop-label">Memory Grant</div><div class="prop-value">${node.memoryGrant.toLocaleString()} KB</div>` : ''}
+    </div>
+  </div>`;
+
+  // Actual Stats (if present)
+  if (node.actualRows !== null || node.actualElapsed || node.actualExec) {
+    html += `<div class="prop-section">
+      <div class="prop-section-title">Actual Execution</div>
+      <div class="prop-grid">
+        ${node.actualRows !== null ? `<div class="prop-label">Actual Rows</div><div class="prop-value${node.actualRows > node.estimatedRows * 10 ? ' warn' : ''}">${node.actualRows.toLocaleString()}${node.actualRows > node.estimatedRows * 10 ? ' ⚠️' : ''}</div>` : ''}
+        ${node.actualRowsRead ? `<div class="prop-label">Actual Rows Read</div><div class="prop-value">${node.actualRowsRead.toLocaleString()}</div>` : ''}
+        ${node.actualExec ? `<div class="prop-label">Actual Executions</div><div class="prop-value">${node.actualExec.toLocaleString()}</div>` : ''}
+        ${node.actualElapsed ? `<div class="prop-label">Elapsed Time</div><div class="prop-value">${node.actualElapsed.toFixed(1)} ms</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Object
+  if (node.objectName) {
+    html += `<div class="prop-section">
+      <div class="prop-section-title">Object</div>
+      <div style="font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem">${node.objectName}</div>
+    </div>`;
+  }
+
+  // Predicates
+  if (node.predicates.length > 0) {
+    html += `<div class="prop-section">
+      <div class="prop-section-title">Predicates</div>`;
+    node.predicates.forEach(p => {
+      html += `<div class="prop-pred-label">${p.label}</div><div class="prop-pred">${p.value}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Output Columns
+  if (node.outputCols.length > 0) {
+    html += `<div class="prop-section">
+      <div class="prop-section-title">Output Columns (${node.outputCols.length})</div>
+      <div class="prop-cols">${node.outputCols.join('<br>')}</div>
+    </div>`;
+  }
+
+  // Performance Tip
+  if (opInfo && opInfo.perf) {
+    html += `<div class="prop-section">
+      <div class="prop-section-title">💡 Performance Tip</div>
+      <div class="prop-perf">${opInfo.perf}</div>
+    </div>`;
+  }
+
+  propBody.innerHTML = html;
+  propOverlay.classList.add('visible');
+
+  document.getElementById('propClose').addEventListener('click', closePropertiesModal);
+}
+
+function closePropertiesModal() {
+  propOverlay.classList.remove('visible');
+}
+
+propOverlay.addEventListener('click', (e) => {
+  if (e.target === propOverlay) closePropertiesModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && propOverlay.classList.contains('visible')) {
+    closePropertiesModal();
+    e.stopPropagation();
+  }
+});
+
+// ── Focus Node ──
+function focusNode(nodeId) {
+  // Clear any existing highlights
+  document.querySelectorAll('.plan-node.highlighted').forEach(el => el.classList.remove('highlighted'));
+
+  const el = document.getElementById(nodeId);
+  if (!el) return;
+
+  // Highlight it
+  el.classList.add('highlighted');
+
+  // Pan so the node is centered in the viewport
+  const wrapRect = canvasWrap.getBoundingClientRect();
+  const nodeX = parseInt(el.style.left) + NODE_W / 2;
+  const nodeY = parseInt(el.style.top) + NODE_H / 2;
+
+  panX = wrapRect.width / 2 - nodeX * panScale;
+  panY = wrapRect.height / 2 - nodeY * panScale;
+  applyTransform();
+
+  // Remove highlight after animation
+  setTimeout(() => el.classList.remove('highlighted'), 4500);
+}
+
+// ── Fullscreen ──
+const canvasWrap = document.getElementById('canvasWrap');
+const canvasToggle = document.getElementById('canvasToggle');
+const fsFitBtn = document.getElementById('fsFitBtn');
+
+function isFullscreen() { return canvasWrap.classList.contains('fullscreen'); }
+
+function enterFullscreen() {
+  canvasWrap.classList.add('fullscreen');
+  canvasToggle.textContent = '⛶';
+  canvasToggle.title = 'Reduce to normal size';
+  // Sync fs sliders from main sliders
+  document.getElementById('fsCardSize').value = document.getElementById('ctrlCardSize').value;
+  document.getElementById('fsCardSizeVal').textContent = document.getElementById('ctrlCardSizeVal').textContent;
+  document.getElementById('fsHGap').value = document.getElementById('ctrlHGap').value;
+  document.getElementById('fsHGapVal').textContent = document.getElementById('ctrlHGapVal').textContent;
+  document.getElementById('fsVGap').value = document.getElementById('ctrlVGap').value;
+  document.getElementById('fsVGapVal').textContent = document.getElementById('ctrlVGapVal').textContent;
+}
+function exitFullscreen() {
+  canvasWrap.classList.remove('fullscreen');
+  canvasToggle.textContent = '⛶';
+  canvasToggle.title = 'Expand to full screen';
+  // Sync main sliders back
+  document.getElementById('ctrlCardSize').value = document.getElementById('fsCardSize').value;
+  document.getElementById('ctrlCardSizeVal').textContent = document.getElementById('fsCardSizeVal').textContent;
+  document.getElementById('ctrlHGap').value = document.getElementById('fsHGap').value;
+  document.getElementById('ctrlHGapVal').textContent = document.getElementById('fsHGapVal').textContent;
+  document.getElementById('ctrlVGap').value = document.getElementById('fsVGap').value;
+  document.getElementById('ctrlVGapVal').textContent = document.getElementById('fsVGapVal').textContent;
+}
+canvasToggle.addEventListener('click', () => isFullscreen() ? exitFullscreen() : enterFullscreen());
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isFullscreen()) exitFullscreen();
+});
+
+// Fit to window: zoom and pan so entire plan fits in visible area
+function fitToWindow() {
+  if (!currentPlan) return;
+  const stmt = currentPlan.statements[currentStmtIdx];
+  const tree = stmt.tree;
+
+  // Get actual content size from the tree layout (+ padding)
+  const contentW = tree._totalW + 64;
+  const contentH = tree._totalH + 64;
+
+  // Get the visible viewport area
+  const wrapRect = canvasWrap.getBoundingClientRect();
+  const availW = wrapRect.width - 24;
+  const availH = wrapRect.height - 24;
+
+  // Determine scale ratio needed
+  const fitScale = Math.min(availW / contentW, availH / contentH);
+
+  // Compute new sizes by scaling current values
+  const currentCardPct = parseInt(document.getElementById(isFullscreen() ? 'fsCardSize' : 'ctrlCardSize').value);
+  const newCardPct = Math.max(20, Math.min(300, Math.round(currentCardPct * fitScale)));
+  const newHGap = Math.max(5, Math.min(100, Math.round(H_GAP * fitScale)));
+  const newVGap = Math.max(2, Math.min(60, Math.round(V_GAP * fitScale)));
+
+  // Apply baked sizes
+  applyCardSize(newCardPct);
+  H_GAP = newHGap;
+  V_GAP = newVGap;
+
+  // Reset pan/zoom to 1:1
+  panX = 0; panY = 0; panScale = 1;
+
+  // Update all sliders
+  ['ctrl', 'fs'].forEach(prefix => {
+    document.getElementById(prefix + 'CardSize').value = newCardPct;
+    document.getElementById(prefix + 'CardSizeVal').textContent = newCardPct;
+    document.getElementById(prefix + 'HGap').value = newHGap;
+    document.getElementById(prefix + 'HGapVal').textContent = newHGap;
+    document.getElementById(prefix + 'VGap').value = newVGap;
+    document.getElementById(prefix + 'VGapVal').textContent = newVGap;
+  });
+
+  // Re-render with the new actual sizes
+  renderPlan(currentPlan.statements[currentStmtIdx]);
+}
+fsFitBtn.addEventListener('click', fitToWindow);
+document.getElementById('ctrlFitBtn').addEventListener('click', fitToWindow);
+
+// Wire fullscreen sliders
+['fsCardSize', 'fsHGap', 'fsVGap'].forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('input', () => {
+    const v = parseInt(input.value);
+    document.getElementById(id + 'Val').textContent = v;
+    if (id === 'fsCardSize') applyCardSize(v);
+    else if (id === 'fsHGap') H_GAP = v;
+    else if (id === 'fsVGap') V_GAP = v;
+    if (currentPlan) renderPlan(currentPlan.statements[currentStmtIdx]);
+  });
+});
+
+// ── Pan & Zoom ──
+let panX = 0, panY = 0, panScale = 1;
+let isPanning = false, panStartX = 0, panStartY = 0, panStartPX = 0, panStartPY = 0;
+
+function applyTransform() {
+  const canvas = document.getElementById('planCanvas');
+  canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${panScale})`;
+}
+
+function resetPan() {
+  panX = 0; panY = 0; panScale = 1;
+  applyTransform();
+}
+
+canvasWrap.addEventListener('mousedown', (e) => {
+  // Don't pan if clicking a button or node
+  if (e.target.closest('.canvas-toggle, .plan-node, button')) return;
+  isPanning = true;
+  panStartX = e.clientX;
+  panStartY = e.clientY;
+  panStartPX = panX;
+  panStartPY = panY;
+  canvasWrap.classList.add('panning');
+  e.preventDefault();
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  panX = panStartPX + (e.clientX - panStartX);
+  panY = panStartPY + (e.clientY - panStartY);
+  applyTransform();
+});
+
+window.addEventListener('mouseup', () => {
+  if (isPanning) {
+    isPanning = false;
+    canvasWrap.classList.remove('panning');
+  }
+});
+
+// Scroll wheel to zoom
+canvasWrap.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newScale = Math.max(0.1, Math.min(5, panScale * delta));
+
+  // Zoom toward cursor position
+  const rect = canvasWrap.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  panX = cx - (cx - panX) * (newScale / panScale);
+  panY = cy - (cy - panY) * (newScale / panScale);
+  panScale = newScale;
+  applyTransform();
+}, { passive: false });
+
+// ── Theme ──
+const themeToggle = document.getElementById('themeToggle');
+const html = document.documentElement;
+const savedTheme = localStorage.getItem('ep-theme');
+if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+  html.setAttribute('data-theme', 'light');
+  themeToggle.textContent = '☀️';
+}
+themeToggle.addEventListener('click', () => {
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  themeToggle.textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('ep-theme', isLight ? 'dark' : 'light');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ShowPlanXML xmlns="http://schemas.microsoft.com/sqlserver/2004/07/showplan" Version="1.6" Build="16.0.4165.4">
+  <BatchSequence>
+    <Batch>
+      <Statements>
+        <!-- Statement 1: Compliance Dashboard — Incident Reports with MAR cross-reference -->
+        <StmtSimple StatementText="SELECT p.FirstName, p.LastName, h.HomeName, ir.IncidentDate, ir.IncidentDescription, ir.StaffIntervention, it.Name AS IncidentTypeName, u.DisplayName AS ReportedBy, fs.SignerName, fs.SignedDate, fwh.ToStatus, fwh.TransitionDate, marSub.MissedMeds, marSub.LateMeds, alSub.AccessCount FROM Participants p INNER JOIN Homes h ON p.HomeId = h.Id INNER JOIN IncidentReports ir ON ir.ParticipantName = p.FirstName + ' ' + p.LastName INNER JOIN IncidentReportIncidentTypes irit ON ir.Id = irit.IncidentReportId INNER JOIN IncidentTypes it ON irit.IncidentTypeId = it.Id LEFT JOIN Users u ON ir.CreatedBy = u.Email LEFT JOIN FormSignatures fs ON ir.Id = fs.FormId LEFT JOIN FormWorkflowHistories fwh ON ir.Id = fwh.FormId AND fwh.ToStatus = 4 CROSS APPLY (SELECT COUNT(CASE WHEN mar.Status = 3 THEN 1 END) AS MissedMeds, COUNT(CASE WHEN mar.IsLateEntry = 1 THEN 1 END) AS LateMeds FROM MedicationAdministrationRecords mar WHERE mar.ParticipantId = p.Id AND mar.ScheduledDateTime &gt;= DATEADD(day, -30, ir.IncidentDate)) marSub OUTER APPLY (SELECT COUNT(*) AS AccessCount FROM AuditLogs al WHERE al.RecordId = ir.Id AND al.TableName = 'IncidentReports') alSub WHERE ir.IncidentDate &gt;= '2025-01-01' AND h.IsActive = 1 ORDER BY ir.IncidentDate DESC, p.LastName" StatementId="1" StatementCompId="1" StatementType="SELECT" StatementSubTreeCost="3.84721" StatementEstRows="847" StatementOptmLevel="FULL" CardinalityEstimationModelVersion="160">
+          <StatementSetOptions QUOTED_IDENTIFIER="true" ARITHABORT="true" CONCAT_NULL_YIELDS_NULL="true" ANSI_NULLS="true" ANSI_PADDING="true" ANSI_WARNINGS="true" NUMERIC_ROUNDABORT="false" />
+          <QueryPlan DegreeOfParallelism="4" MemoryGrant="8192" CachedPlanSize="96" CompileTime="47" CompileCPU="45" CompileMemory="1536">
+
+            <!-- Root: Sort (ORDER BY IncidentDate DESC, LastName) -->
+            <RelOp NodeId="0" PhysicalOp="Sort" LogicalOp="Sort" EstimateRows="847" EstimateIO="0.02532" EstimateCPU="0.03891" EstimatedTotalSubtreeCost="3.84721" Parallel="false" EstimateExecutions="1">
+              <Sort>
+                <OrderBy>
+                  <OrderByColumn Ascending="false">
+                    <ColumnReference Database="[EHSForms]" Schema="[dbo]" Table="[IncidentReports]" Alias="[ir]" Column="IncidentDate" />
+                  </OrderByColumn>
+                  <OrderByColumn Ascending="true">
+                    <ColumnReference Database="[EHSForms]" Schema="[dbo]" Table="[Participants]" Alias="[p]" Column="LastName" />
+                  </OrderByColumn>
+                </OrderBy>
+
+                <!-- Parallelism: Gather Streams -->
+                <RelOp NodeId="1" PhysicalOp="Parallelism" LogicalOp="Gather Streams" EstimateRows="847" EstimateIO="0" EstimateCPU="0.00427" EstimatedTotalSubtreeCost="3.78298" Parallel="true" EstimateExecutions="1">
+                  <Parallelism>
+
+                    <!-- OUTER APPLY: AuditLog count -->
+                    <RelOp NodeId="2" PhysicalOp="Nested Loops" LogicalOp="Left Outer Join" EstimateRows="847" EstimateIO="0" EstimateCPU="0.00381" EstimatedTotalSubtreeCost="3.77871" Parallel="true" EstimateExecutions="1">
+                      <NestedLoops>
+
+                        <!-- CROSS APPLY: MAR subquery -->
+                        <RelOp NodeId="3" PhysicalOp="Nested Loops" LogicalOp="Inner Join" EstimateRows="847" EstimateIO="0" EstimateCPU="0.00762" EstimatedTotalSubtreeCost="3.12504" Parallel="true" EstimateExecutions="1">
+                          <NestedLoops>
+
+                            <!-- Hash Match: Main join complex -->
+                            <RelOp NodeId="4" PhysicalOp="Hash Match" LogicalOp="Inner Join" EstimateRows="847" EstimateIO="0" EstimateCPU="0.02194" EstimatedTotalSubtreeCost="1.98231" Parallel="true" EstimateExecutions="1">
+                              <Hash>
+
+                                <!-- Left: Hash Match (IncidentReports + IncidentTypes + Users + FormSignatures + WorkflowHistory) -->
+                                <RelOp NodeId="5" PhysicalOp="Hash Match" LogicalOp="Left Outer Join" EstimateRows="1293" EstimateIO="0" EstimateCPU="0.01847" EstimatedTotalSubtreeCost="1.45892" Parallel="true" EstimateExecutions="1">
+                                  <Hash>
+
+                                    <!-- Left side: Hash Match (IR + types + users + signatures) -->
+                                    <RelOp NodeId="6" PhysicalOp="Hash Match" LogicalOp="Left Outer Join" EstimateRows="1293" EstimateIO="0" EstimateCPU="0.01523" EstimatedTotalSubtreeCost="1.19204" Parallel="true" EstimateExecutions="1">
+                                      <Hash>
+
+                                        <!-- Left: Hash Match (IR + incident types + users) -->
+                                        <RelOp NodeId="7" PhysicalOp="Hash Match" LogicalOp="Left Outer Join" EstimateRows="1293" EstimateIO="0" EstimateCPU="0.01298" EstimatedTotalSubtreeCost="0.94518" Parallel="true" EstimateExecutions="1">
+                                          <Hash>
+
+                                            <!-- Left: Hash Match (IR + incident types) -->
+                                            <RelOp NodeId="8" PhysicalOp="Hash Match" LogicalOp="Inner Join" EstimateRows="1293" EstimateIO="0" EstimateCPU="0.01104" EstimatedTotalSubtreeCost="0.68247" Parallel="true" EstimateExecutions="1">
+                                              <Hash>
+
+                                                <!-- Build: IncidentReports (Clustered Index Scan with date filter) -->
+                                                <RelOp NodeId="9" PhysicalOp="Clustered Index Scan" LogicalOp="Clustered Index Scan" EstimateRows="1293" EstimateIO="0.18945" EstimateCPU="0.01247" EstimatedTotalSubtreeCost="0.20192" Parallel="true" EstimateExecutions="1">
+                                                  <IndexScan Ordered="false" ScanDirection="FORWARD">
+                                                    <Object Database="[EHSForms]" Schema="[dbo]" Table="[IncidentReports]" Index="[PK_IncidentReports]" Alias="[ir]" />
+                                                  </IndexScan>
+                                                </RelOp>
+
+                                                <!-- Probe: Nested Loops (IncidentReportIncidentTypes → IncidentTypes) -->
+                                                <RelOp NodeId="10" PhysicalOp="Nested Loops" LogicalOp="Inner Join" EstimateRows="3841" EstimateIO="0" EstimateCPU="0.01681" EstimatedTotalSubtreeCost="0.4687" Parallel="true" EstimateExecutions="1">
+                                                  <NestedLoops>
+                                                    <!-- IncidentReportIncidentTypes scan -->
+                                                    <RelOp NodeId="11" PhysicalOp="Clustered Index Scan" LogicalOp="Clustered Index Scan" EstimateRows="3841" EstimateIO="0.04287" EstimateCPU="0.00794" EstimatedTotalSubtreeCost="0.05081" Parallel="true" EstimateExecutions="1">
+                                                      <IndexScan Ordered="false" ScanDirection="FORWARD">
+                                                        <Object Database="[EHSForms]" Schema="[dbo]" Table="[IncidentReportIncidentTypes]" Index="[PK_IncidentReportIncidentTypes]" Alias="[irit]" />
+                                                      </IndexScan>
+                                                    </RelOp>
+                                                    <!-- IncidentTypes seek -->
+                                                    <RelOp NodeId="12" PhysicalOp="Clustered Index Seek" LogicalOp="Clustered Index Seek" EstimateRows="1" EstimateIO="0.003125" EstimateCPU="0.000158" EstimatedTotalSubtreeCost="0.003283" Parallel="true" EstimateExecutions="3841">
+                                                      <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                                        <Object Database="[EHSForms]" Schema="[dbo]" Table="[IncidentTypes]" Index="[PK_IncidentTypes]" Alias="[it]" />
+                                                      </IndexScan>
+                                                    </RelOp>
+                                                  </NestedLoops>
+                                                </RelOp>
+
+                                              </Hash>
+                                            </RelOp>
+
+                                            <!-- Right: Users table scan (LEFT JOIN) -->
+                                            <RelOp NodeId="13" PhysicalOp="Clustered Index Scan" LogicalOp="Clustered Index Scan" EstimateRows="87" EstimateIO="0.01042" EstimateCPU="0.00197" EstimatedTotalSubtreeCost="0.01239" Parallel="true" EstimateExecutions="1">
+                                              <IndexScan Ordered="false" ScanDirection="FORWARD">
+                                                <Object Database="[EHSForms]" Schema="[dbo]" Table="[Users]" Index="[PK_Users]" Alias="[u]" />
+                                              </IndexScan>
+                                            </RelOp>
+
+                                          </Hash>
+                                        </RelOp>
+
+                                        <!-- Right: FormSignatures (LEFT JOIN) -->
+                                        <RelOp NodeId="14" PhysicalOp="Clustered Index Scan" LogicalOp="Clustered Index Scan" EstimateRows="4218" EstimateIO="0.07834" EstimateCPU="0.00876" EstimatedTotalSubtreeCost="0.0871" Parallel="true" EstimateExecutions="1">
+                                          <IndexScan Ordered="false" ScanDirection="FORWARD">
+                                            <Object Database="[EHSForms]" Schema="[dbo]" Table="[FormSignatures]" Index="[PK_FormSignatures]" Alias="[fs]" />
+                                          </IndexScan>
+                                        </RelOp>
+
+                                      </Hash>
+                                    </RelOp>
+
+                                    <!-- Right: FormWorkflowHistories (LEFT JOIN with filter ToStatus = 4) -->
+                                    <RelOp NodeId="15" PhysicalOp="Index Seek" LogicalOp="Index Seek" EstimateRows="892" EstimateIO="0.02318" EstimateCPU="0.00247" EstimatedTotalSubtreeCost="0.02565" Parallel="true" EstimateExecutions="1">
+                                      <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                        <Object Database="[EHSForms]" Schema="[dbo]" Table="[FormWorkflowHistories]" Index="[IX_FormWorkflowHistories_ToStatus]" Alias="[fwh]" />
+                                      </IndexScan>
+                                    </RelOp>
+
+                                  </Hash>
+                                </RelOp>
+
+                                <!-- Right: Participants + Homes (Nested Loops with Key Lookup) -->
+                                <RelOp NodeId="16" PhysicalOp="Nested Loops" LogicalOp="Inner Join" EstimateRows="142" EstimateIO="0" EstimateCPU="0.00128" EstimatedTotalSubtreeCost="0.50145" Parallel="true" EstimateExecutions="1">
+                                  <NestedLoops>
+
+                                    <!-- Homes seek (IsActive = 1 filter) -->
+                                    <RelOp NodeId="17" PhysicalOp="Index Seek" LogicalOp="Index Seek" EstimateRows="12" EstimateIO="0.003125" EstimateCPU="0.000241" EstimatedTotalSubtreeCost="0.003366" Parallel="true" EstimateExecutions="1">
+                                      <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                        <Object Database="[EHSForms]" Schema="[dbo]" Table="[Homes]" Index="[IX_Homes_IsActive]" Alias="[h]" />
+                                      </IndexScan>
+                                    </RelOp>
+
+                                    <!-- Participants: Index Seek on HomeId + Key Lookup -->
+                                    <RelOp NodeId="18" PhysicalOp="Nested Loops" LogicalOp="Inner Join" EstimateRows="12" EstimateIO="0" EstimateCPU="0.000108" EstimatedTotalSubtreeCost="0.49671" Parallel="true" EstimateExecutions="12">
+                                      <NestedLoops>
+                                        <RelOp NodeId="19" PhysicalOp="Index Seek" LogicalOp="Index Seek" EstimateRows="12" EstimateIO="0.003125" EstimateCPU="0.000241" EstimatedTotalSubtreeCost="0.003366" Parallel="true" EstimateExecutions="12">
+                                          <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                            <Object Database="[EHSForms]" Schema="[dbo]" Table="[Participants]" Index="[IX_Participants_HomeId]" Alias="[p]" />
+                                          </IndexScan>
+                                        </RelOp>
+                                        <RelOp NodeId="20" PhysicalOp="Key Lookup" LogicalOp="Key Lookup" EstimateRows="1" EstimateIO="0.003125" EstimateCPU="0.000158" EstimatedTotalSubtreeCost="0.003283" Parallel="true" EstimateExecutions="142">
+                                          <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                            <Object Database="[EHSForms]" Schema="[dbo]" Table="[Participants]" Index="[PK_Participants]" Alias="[p]" />
+                                          </IndexScan>
+                                        </RelOp>
+                                      </NestedLoops>
+                                    </RelOp>
+
+                                  </NestedLoops>
+                                </RelOp>
+
+                              </Hash>
+                            </RelOp>
+
+                            <!-- CROSS APPLY: MAR aggregate subquery -->
+                            <RelOp NodeId="21" PhysicalOp="Stream Aggregate" LogicalOp="Aggregate" EstimateRows="1" EstimateIO="0" EstimateCPU="0.000082" EstimatedTotalSubtreeCost="1.13511" Parallel="true" EstimateExecutions="847">
+                              <StreamAggregate>
+                                <!-- MAR Index Seek on ParticipantId + date range -->
+                                <RelOp NodeId="22" PhysicalOp="Index Seek" LogicalOp="Index Seek" EstimateRows="48" EstimateIO="0.003125" EstimateCPU="0.000624" EstimatedTotalSubtreeCost="1.13503" Parallel="true" EstimateExecutions="847">
+                                  <Warnings>
+                                    <SpillToTempDb SpillLevel="1" />
+                                  </Warnings>
+                                  <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                    <Object Database="[EHSForms]" Schema="[dbo]" Table="[MedicationAdministrationRecords]" Index="[IX_MAR_ParticipantId_ScheduledDateTime]" Alias="[mar]" />
+                                  </IndexScan>
+                                </RelOp>
+                              </StreamAggregate>
+                            </RelOp>
+
+                          </NestedLoops>
+                        </RelOp>
+
+                        <!-- OUTER APPLY: AuditLog count subquery -->
+                        <RelOp NodeId="23" PhysicalOp="Stream Aggregate" LogicalOp="Aggregate" EstimateRows="1" EstimateIO="0" EstimateCPU="0.000041" EstimatedTotalSubtreeCost="0.64986" Parallel="true" EstimateExecutions="847">
+                          <StreamAggregate>
+                            <!-- AuditLogs: Index Seek on RecordId + TableName -->
+                            <RelOp NodeId="24" PhysicalOp="Index Seek" LogicalOp="Index Seek" EstimateRows="7" EstimateIO="0.003125" EstimateCPU="0.000312" EstimatedTotalSubtreeCost="0.64982" Parallel="true" EstimateExecutions="847">
+                              <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                <Object Database="[EHSForms]" Schema="[dbo]" Table="[AuditLogs]" Index="[IX_AuditLogs_RecordId_TableName]" Alias="[al]" />
+                              </IndexScan>
+                            </RelOp>
+                          </StreamAggregate>
+                        </RelOp>
+
+                      </NestedLoops>
+                    </RelOp>
+
+                  </Parallelism>
+                </RelOp>
+
+              </Sort>
+            </RelOp>
+
+          </QueryPlan>
+        </StmtSimple>
+
+        <!-- Statement 2: Active Participant Medication Summary -->
+        <StmtSimple StatementText="SELECT p.FirstName, p.LastName, pm.MedicationName, pm.Dosage, pm.Route, pm.Frequency, h.HomeName, COUNT(mar.Id) AS AdminCount, SUM(CASE WHEN mar.Status = 3 THEN 1 ELSE 0 END) AS MissedCount, MAX(mar.ActualDateTime) AS LastAdministered FROM Participants p INNER JOIN ParticipantMedications pm ON p.Id = pm.ParticipantId INNER JOIN Homes h ON p.HomeId = h.Id LEFT JOIN MedicationAdministrationRecords mar ON pm.Id = mar.ParticipantMedicationId AND mar.ScheduledDateTime &gt;= DATEADD(day, -7, GETUTCDATE()) WHERE pm.IsActive = 1 AND p.IsActive = 1 GROUP BY p.FirstName, p.LastName, pm.MedicationName, pm.Dosage, pm.Route, pm.Frequency, h.HomeName ORDER BY p.LastName, pm.MedicationName" StatementId="2" StatementCompId="2" StatementType="SELECT" StatementSubTreeCost="1.24891" StatementEstRows="3214" StatementOptmLevel="FULL" CardinalityEstimationModelVersion="160">
+          <StatementSetOptions QUOTED_IDENTIFIER="true" ARITHABORT="true" CONCAT_NULL_YIELDS_NULL="true" ANSI_NULLS="true" ANSI_PADDING="true" ANSI_WARNINGS="true" NUMERIC_ROUNDABORT="false" />
+          <QueryPlan DegreeOfParallelism="4" MemoryGrant="4096" CachedPlanSize="56" CompileTime="18" CompileCPU="16" CompileMemory="768">
+
+            <!-- Root: Sort for ORDER BY -->
+            <RelOp NodeId="25" PhysicalOp="Sort" LogicalOp="Sort" EstimateRows="3214" EstimateIO="0.04218" EstimateCPU="0.05127" EstimatedTotalSubtreeCost="1.24891" Parallel="false" EstimateExecutions="1">
+              <Sort>
+                <OrderBy>
+                  <OrderByColumn Ascending="true">
+                    <ColumnReference Database="[EHSForms]" Schema="[dbo]" Table="[Participants]" Alias="[p]" Column="LastName" />
+                  </OrderByColumn>
+                </OrderBy>
+
+                <!-- Hash Aggregate for GROUP BY -->
+                <RelOp NodeId="26" PhysicalOp="Hash Match" LogicalOp="Aggregate" EstimateRows="3214" EstimateIO="0" EstimateCPU="0.04891" EstimatedTotalSubtreeCost="1.15546" Parallel="false" EstimateExecutions="1">
+                  <Hash>
+
+                    <!-- Hash Join: (Participants+Meds+Homes) LEFT JOIN MAR -->
+                    <RelOp NodeId="27" PhysicalOp="Hash Match" LogicalOp="Left Outer Join" EstimateRows="18472" EstimateIO="0" EstimateCPU="0.02847" EstimatedTotalSubtreeCost="1.10655" Parallel="false" EstimateExecutions="1">
+                      <Hash>
+
+                        <!-- Build: Nested Loops (Participants → Meds → Homes) -->
+                        <RelOp NodeId="28" PhysicalOp="Nested Loops" LogicalOp="Inner Join" EstimateRows="3214" EstimateIO="0" EstimateCPU="0.01409" EstimatedTotalSubtreeCost="0.54218" Parallel="false" EstimateExecutions="1">
+                          <NestedLoops>
+
+                            <!-- Nested Loops: Participants + Homes -->
+                            <RelOp NodeId="29" PhysicalOp="Nested Loops" LogicalOp="Inner Join" EstimateRows="142" EstimateIO="0" EstimateCPU="0.000624" EstimatedTotalSubtreeCost="0.08734" Parallel="false" EstimateExecutions="1">
+                              <NestedLoops>
+                                <!-- Participants scan (IsActive = 1) -->
+                                <RelOp NodeId="30" PhysicalOp="Clustered Index Scan" LogicalOp="Clustered Index Scan" EstimateRows="142" EstimateIO="0.03218" EstimateCPU="0.00347" EstimatedTotalSubtreeCost="0.03565" Parallel="false" EstimateExecutions="1">
+                                  <IndexScan Ordered="false" ScanDirection="FORWARD">
+                                    <Object Database="[EHSForms]" Schema="[dbo]" Table="[Participants]" Index="[PK_Participants]" Alias="[p]" />
+                                  </IndexScan>
+                                </RelOp>
+                                <!-- Homes seek -->
+                                <RelOp NodeId="31" PhysicalOp="Clustered Index Seek" LogicalOp="Clustered Index Seek" EstimateRows="1" EstimateIO="0.003125" EstimateCPU="0.000158" EstimatedTotalSubtreeCost="0.003283" Parallel="false" EstimateExecutions="142">
+                                  <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                    <Object Database="[EHSForms]" Schema="[dbo]" Table="[Homes]" Index="[PK_Homes]" Alias="[h]" />
+                                  </IndexScan>
+                                </RelOp>
+                              </NestedLoops>
+                            </RelOp>
+
+                            <!-- ParticipantMedications seek (IsActive = 1) -->
+                            <RelOp NodeId="32" PhysicalOp="Index Seek" LogicalOp="Index Seek" EstimateRows="23" EstimateIO="0.003125" EstimateCPU="0.000397" EstimatedTotalSubtreeCost="0.003522" Parallel="false" EstimateExecutions="142">
+                              <IndexScan Ordered="true" ScanDirection="FORWARD">
+                                <Object Database="[EHSForms]" Schema="[dbo]" Table="[ParticipantMedications]" Index="[IX_ParticipantMedications_ParticipantId]" Alias="[pm]" />
+                              </IndexScan>
+                            </RelOp>
+
+                          </NestedLoops>
+                        </RelOp>
+
+                        <!-- Probe: MAR records (last 7 days) - full scan with Compute Scalar -->
+                        <RelOp NodeId="33" PhysicalOp="Clustered Index Scan" LogicalOp="Clustered Index Scan" EstimateRows="87412" EstimateIO="0.38472" EstimateCPU="0.09612" EstimatedTotalSubtreeCost="0.48084" Parallel="false" EstimateExecutions="1">
+                          <Warnings>
+                            <NoJoinPredicate />
+                          </Warnings>
+                          <IndexScan Ordered="false" ScanDirection="FORWARD">
+                            <Object Database="[EHSForms]" Schema="[dbo]" Table="[MedicationAdministrationRecords]" Index="[PK_MedicationAdministrationRecords]" Alias="[mar]" />
+                          </IndexScan>
+                        </RelOp>
+
+                      </Hash>
+                    </RelOp>
+
+                  </Hash>
+                </RelOp>
+
+              </Sort>
+            </RelOp>
+
+          </QueryPlan>
+        </StmtSimple>
+      </Statements>
+    </Batch>
+  </BatchSequence>
+</ShowPlanXML>
