@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — thatguy.dev</title>
+<meta name="description" content="Opinion and analysis on technology, AI, and systems thinking by Chris Virgin.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+    --border: #30363d; --text: #e6edf3; --text-dim: #8b949e; --accent: #58a6ff;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f8fa; --surface: #fff; --surface2: #f6f8fa;
+      --border: #d0d7de; --text: #1f2328; --text-dim: #656d76; --accent: #0969da;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  .site-header { border-bottom: 1px solid var(--border); padding: 14px 0; margin-bottom: 48px; }
+  .site-header .inner {
+    max-width: 760px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .site-brand { font-size: 1rem; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.5px; }
+  .site-brand .accent { color: var(--accent); }
+  .site-brand .dim { color: var(--text-dim); font-weight: 400; }
+  .site-nav a { color: var(--text-dim); text-decoration: none; font-size: 0.85rem; margin-left: 20px; transition: color 0.15s; }
+  .site-nav a:hover { color: var(--text); }
+  .container { max-width: 760px; margin: 0 auto; padding: 0 24px 80px; }
+  h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .subtitle { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 40px; }
+  .post-card {
+    display: block; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px 28px; text-decoration: none; color: var(--text);
+    transition: all 0.15s; margin-bottom: 16px;
+  }
+  .post-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .post-label {
+    display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-dim); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 20px; margin-bottom: 12px;
+  }
+  .post-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
+  .post-excerpt { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px; }
+  .post-meta { font-size: 0.78rem; color: var(--text-dim); }
+  .footer { margin-top: 48px; color: var(--text-dim); font-size: 0.8rem; }
+  .footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="inner">
+    <a class="site-brand" href="https://thatguy.dev">that<span class="accent">guy</span>.dev<span class="dim"> / blog</span></a>
+    <nav class="site-nav">
+      <a href="https://thatguy.dev">Tools</a>
+      <a href="https://blog.thatguy.dev">Blog</a>
+    </nav>
+  </div>
+</header>
+<div class="container">
+  <h1>Blog</h1>
+  <p class="subtitle">Opinion and analysis on technology, AI, and systems thinking.</p>
+
+  <a href="/blog/ai-arms-race-surveillance/" class="post-card">
+    <div class="post-label">Opinion · AI &amp; Society</div>
+    <div class="post-title">When AI Meets Bad Actors: The Case for Protecting Americans from AI Surveillance</div>
+    <div class="post-excerpt">The Anthropic vs. Pentagon standoff, the OpenAI deal, and why the protection of American civil liberties shouldn't depend on the ethics clauses of private companies.</div>
+    <div class="post-meta">February 28, 2026 &nbsp;·&nbsp; 8 min read</div>
+  </a>
+
+  <div class="footer">
+    Built by <a href="https://github.com/christophervirgin" target="_blank">Chris Virgin</a> · Idaho Falls, ID
+  </div>
+</div>
+</body>
+</html>

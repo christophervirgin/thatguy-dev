@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>When AI Meets Bad Actors — blog.thatguy.dev</title>
+<meta name="description" content="The Anthropic vs. Pentagon standoff, the OpenAI deal, and why American citizens should demand protection against AI-powered mass surveillance.">
+<meta property="og:title" content="When AI Meets Bad Actors: The Case for Protecting Americans from AI Surveillance">
+<meta property="og:description" content="The Anthropic vs. Pentagon standoff, the OpenAI deal, and why American citizens should demand protection against AI-powered mass surveillance.">
+<meta property="og:url" content="https://blog.thatguy.dev/ai-arms-race-surveillance">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-warm: #f78166;
+    --green: #3fb950;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f8fa;
+      --surface: #fff;
+      --surface2: #f6f8fa;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --text-dim: #656d76;
+      --accent: #0969da;
+      --accent-warm: #cf222e;
+      --green: #1a7f37;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  /* Header */
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    margin-bottom: 48px;
+  }
+  .site-header .inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .site-brand {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+  }
+  .site-brand .accent { color: var(--accent); }
+  .site-brand .dim { color: var(--text-dim); font-weight: 400; }
+  .site-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-left: 20px;
+    transition: color 0.15s;
+  }
+  .site-nav a:hover { color: var(--text); }
+
+  /* Article layout */
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Article header */
+  .article-label {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+  .article-byline {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 36px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .article-byline a { color: var(--accent); text-decoration: none; }
+
+  /* Body */
+  .article-body p {
+    margin-bottom: 22px;
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+  .article-body p:last-child { margin-bottom: 0; }
+
+  .article-body h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 44px 0 16px;
+    color: var(--text);
+  }
+
+  .article-body strong { color: var(--text); }
+  .article-body em { color: var(--text-dim); font-style: italic; }
+  .article-body a { color: var(--accent); text-decoration: none; }
+  .article-body a:hover { text-decoration: underline; }
+
+  /* Callout */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-warm);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    margin: 28px 0;
+  }
+  .callout p {
+    margin-bottom: 12px;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout strong { color: var(--accent-warm); }
+
+  /* Demand list */
+  .demand-list {
+    list-style: none;
+    margin: 20px 0 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .demand-list li {
+    display: flex;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .demand-num {
+    min-width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Sources */
+  .sources {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-top: 52px;
+  }
+  .sources h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .sources ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .sources li { font-size: 0.875rem; color: var(--text-dim); }
+  .sources li::before { content: "→ "; color: var(--accent); }
+  .sources a { color: var(--accent); text-decoration: none; }
+  .sources a:hover { text-decoration: underline; }
+
+  /* Author */
+  .author-card {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+  .author-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .author-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+  .author-bio { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+  .author-bio a { color: var(--accent); text-decoration: none; }
+
+  /* Back link */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+    transition: color 0.15s;
+  }
+  .back-link:hover { color: var(--text); }
+
+  /* LinkedIn CTA */
+  .cta-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 40px;
+    text-decoration: none;
+    transition: border-color 0.15s;
+  }
+  .cta-card:hover { border-color: var(--accent); }
+  .cta-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .cta-label { font-weight: 600; font-size: 0.9rem; color: var(--text); margin-bottom: 2px; }
+  .cta-sub { font-size: 0.8rem; color: var(--text-dim); }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.5rem; }
+    .article-body h2 { font-size: 1.1rem; }
+    .site-header .inner { padding: 0 16px; }
+    .container { padding: 0 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a class="site-brand" href="https://thatguy.dev">that<span class="accent">guy</span>.dev<span class="dim"> / blog</span></a>
+    <nav class="site-nav">
+      <a href="https://thatguy.dev">Tools</a>
+      <a href="https://blog.thatguy.dev">Blog</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+
+  <a class="back-link" href="https://blog.thatguy.dev">← All posts</a>
+
+  <div class="article-label">Opinion · AI &amp; Society</div>
+
+  <h1>When AI Meets Bad Actors: The Case for Protecting Americans from AI Surveillance</h1>
+
+  <div class="article-byline">
+    By <a href="https://thatguy.dev">Chris Virgin</a> &nbsp;·&nbsp; February 28, 2026 &nbsp;·&nbsp; 8 min read
+  </div>
+
+  <div class="article-body">
+
+    <p>This week, a story played out in Washington that most people scrolled past between their morning coffee and their first Slack message. They shouldn't have. What happened — and what almost happened — reveals something fundamental about where AI is headed, who controls it, and what happens when the people in the room have motivations that don't align with yours.</p>
+
+    <p>Let me walk you through it.</p>
+
+    <h2>The Setup: Anthropic vs. The Pentagon</h2>
+
+    <p>Anthropic, the AI safety company behind the Claude AI models, had been the only large commercial AI provider with models approved for use at the Pentagon — through a partnership with Palantir. By all accounts, it was a significant contract, reportedly worth around $200 million.</p>
+
+    <p>The Pentagon wanted to renew and expand that relationship. But they had a condition: Anthropic had to agree to contractual language allowing Claude to be used for <strong>"all lawful purposes."</strong></p>
+
+    <p>Sounds reasonable on the surface. It isn't.</p>
+
+    <div class="callout">
+      <p><strong>"All lawful purposes"</strong> in a national security context is a phrase designed to be stretched. It could mean logistics. It could mean intelligence analysis. It could also mean <strong>domestic mass surveillance of American citizens</strong> and <strong>fully autonomous weapons systems</strong> — AI-driven tools that make lethal decisions without a human in the loop.</p>
+    </div>
+
+    <p>Anthropic said no. Their CEO Dario Amodei stated publicly that the company could not "in good conscience" accede to those demands. They needed explicit, enforceable language prohibiting use of their AI for domestic surveillance and autonomous weapons. Not aspirational guidelines. Hard stops.</p>
+
+    <p>The Pentagon said that a private contractor doesn't get to dictate how national security tools are used. They set a deadline: 5:01 PM on February 27, 2026. Anthropic didn't blink.</p>
+
+    <h2>The Fallout Was Swift and Severe</h2>
+
+    <p>At 5:02 PM, Secretary of Defense Pete Hegseth designated Anthropic a <strong>"supply chain risk to national security."</strong></p>
+
+    <p>Think about that. An American AI company — one founded specifically around AI safety — was placed on the same national security blacklist as China's Huawei. Not because they were caught doing something harmful. Because they refused to remove safeguards that protected American citizens from harm.</p>
+
+    <p>President Trump followed with an executive order directing <strong>every federal agency</strong> to immediately cease using Anthropic's products. A company that said "don't use our AI to spy on Americans" was treated as a threat to America.</p>
+
+    <h2>OpenAI Stepped In — And This Is Where It Gets Complicated</h2>
+
+    <p>Within hours of Anthropic's deadline passing, OpenAI CEO Sam Altman announced on X that OpenAI had reached a deal with the Pentagon. On the surface, this looked like capitulation where Anthropic held the line. The reality is more nuanced.</p>
+
+    <p>Here's what OpenAI reportedly secured in the contract:</p>
+
+    <ul class="demand-list">
+      <li><span class="demand-num">→</span><span>OpenAI retains control over a <strong>"safety stack"</strong> — a layered system of technical, policy, and human controls between their AI and real-world military use</span></li>
+      <li><span class="demand-num">→</span><span>If an OpenAI model <strong>refuses a task</strong>, the government cannot force OpenAI to override it</span></li>
+      <li><span class="demand-num">→</span><span>Deployment is limited to <strong>cloud environments only</strong> — explicitly not edge systems like drones or aircraft</span></li>
+      <li><span class="demand-num">→</span><span>Named <strong>"red lines"</strong> written into the contract: no autonomous weapons, no domestic mass surveillance, no AI in critical decisions without human oversight</span></li>
+    </ul>
+
+    <p>If those terms hold, that's meaningful. But here's the question nobody can answer yet: <em>Is the language actually enforceable, or does it have the same loopholes Anthropic said their own contract contained?</em></p>
+
+    <p>Anthropic's complaint wasn't that the Pentagon refused to say no to surveillance — it was that the contract appeared protective on the surface while including legalese that would allow those protections to be "disregarded at will." We haven't seen OpenAI's contract. We don't know if the same problem exists.</p>
+
+    <h2>The Venezuela Detail Nobody's Talking About Enough</h2>
+
+    <p>Buried in the reporting is something that should make every American stop: Anthropic's Claude AI was reportedly used by the US military <strong>to assist in the abduction of Venezuelan President Nicolas Maduro</strong> in January 2026 — weeks before this contract dispute became public.</p>
+
+    <p>That means the military was already using Anthropic's AI for active, politically sensitive operations before anyone was having public conversations about what uses should be permitted. The contract dispute didn't start this. The use was already happening.</p>
+
+    <h2>The Real Danger Isn't the AI</h2>
+
+    <p>I want to be clear about something, because this is where most people get it wrong.</p>
+
+    <p>The danger isn't Claude. It isn't GPT-4. It isn't any particular model. The danger is the combination of <strong>powerful AI capabilities</strong> and <strong>the motivations of the people who control them.</strong></p>
+
+    <div class="callout">
+      <p>AI-powered mass surveillance of American citizens is a real, near-term technical possibility. The infrastructure exists. The data exists. The models exist. What has stood in the way — until now — has been policy, law, and the occasional ethical backbone of a private company.</p>
+      <p>We just watched what happens when a company exercises that ethical backbone: <strong>they get blacklisted.</strong></p>
+    </div>
+
+    <p>I'm not arguing that Anthropic was right and OpenAI was wrong, or that the Pentagon's position was illegitimate. Reasonable people can disagree on where those lines should sit. What is not reasonable — what should alarm everyone regardless of politics — is that the entire protection for American civil liberties in this domain currently rests on contract negotiations between private companies and a government that has already shown it will retaliate when it doesn't get what it wants.</p>
+
+    <h2>What Should Actually Happen</h2>
+
+    <p>Private company ethics clauses are not a substitute for law. They are not durable. They are subject to business pressures, leadership changes, government retaliation, and contractual loopholes.</p>
+
+    <p>American citizens should be demanding three things — loudly, from their elected representatives:</p>
+
+    <ul class="demand-list">
+      <li><span class="demand-num">1</span><span><strong>Explicit federal legislation prohibiting AI-powered domestic mass surveillance.</strong> Not guidelines. Not executive orders that can be reversed overnight. Legislation with teeth, with penalties, with independent oversight mechanisms that survive changes in administration.</span></li>
+      <li><span class="demand-num">2</span><span><strong>Mandatory human oversight requirements before any AI-assisted use of force.</strong> If a system can recommend or execute lethal action, a human being must be legally and personally accountable for that decision. Full stop.</span></li>
+      <li><span class="demand-num">3</span><span><strong>Public disclosure of AI contracts with federal agencies.</strong> Taxpayer-funded AI deployments should be subject to meaningful transparency. Scope, stated limitations, and oversight mechanisms should be available for public review — not buried in classified procurement.</span></li>
+    </ul>
+
+    <p>The companies building these tools are doing what they can within the constraints they operate in. Anthropic drew a line and paid a severe price for it. OpenAI negotiated carefully and got in the room. Neither approach is a permanent solution for 335 million Americans.</p>
+
+    <p>The permanent solution is law. And that requires citizens who are paying attention.</p>
+
+  </div>
+
+  <div class="sources">
+    <h3>Sources</h3>
+    <ul>
+      <li><a href="https://apnews.com/article/anthropic-pentagon-ai-hegseth-dario-amodei-b72d1894bc842d9acf026df3867bee8a" target="_blank">AP News — Trump orders US agencies to stop using Anthropic technology</a></li>
+      <li><a href="https://www.politico.com/news/2026/02/26/anthropic-rejects-pentagons-ai-demands-00802554" target="_blank">Politico — Anthropic rejects Pentagon's AI demands</a></li>
+      <li><a href="https://fortune.com/2026/02/27/openai-in-talks-with-pentagon-after-anthropic-blowup/" target="_blank">Fortune — OpenAI strikes a deal with the Pentagon</a></li>
+      <li><a href="https://www.nytimes.com/2026/02/27/technology/openai-agreement-pentagon-ai.html" target="_blank">New York Times — OpenAI Reaches A.I. Agreement With Defense Dept.</a></li>
+      <li><a href="https://www.aljazeera.com/news/2026/2/28/openai-strikes-deal-with-pentagon-to-use-tech-in-classified-network" target="_blank">Al Jazeera — OpenAI strikes deal with Pentagon to use tech in classified network</a></li>
+      <li><a href="https://www.washingtonpost.com/technology/2026/02/27/trump-anthropic-claude-drop/" target="_blank">Washington Post — Pentagon declares Anthropic a threat to national security</a></li>
+      <li><a href="https://www.npr.org/2026/02/27/nx-s1-5729118/trump-anthropic-pentagon-openai-ai-weapons-ban" target="_blank">NPR — OpenAI announces Pentagon deal after Trump bans Anthropic</a></li>
+    </ul>
+  </div>
+
+  <div class="author-card">
+    <div class="author-avatar">⚡</div>
+    <div>
+      <div class="author-name">Chris Virgin</div>
+      <div class="author-bio">Software architect, CTO, and AI specialist based in Idaho Falls. I build enterprise-grade software and write about the intersection of technology, ethics, and systems thinking. <a href="https://thatguy.dev">thatguy.dev</a></div>
+    </div>
+  </div>
+
+  <a class="cta-card" href="https://www.linkedin.com/in/christophervirgin" target="_blank">
+    <div class="cta-icon">💼</div>
+    <div>
+      <div class="cta-label">Read the short version on LinkedIn</div>
+      <div class="cta-sub">A 2-minute shareable take on the same story.</div>
+    </div>
+  </a>
+
+</div>
+
+</body>
+</html>
