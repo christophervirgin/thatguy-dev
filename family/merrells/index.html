@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="/family/merrells/">
+  <script>window.APP_BASE = '/family/merrells';</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1117">
+  <title>Merrell Family Archive</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Preconnect to CDN -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header id="header">
+    <h1>Merrell Family Archive</h1>
+    <span class="subtitle">Knowledge Graph</span>
+    <div class="spacer"></div>
+    <!-- Mobile/tablet only buttons -->
+    <button class="hdr-btn" id="btn-sidebar" aria-label="Toggle sidebar">☰ Index</button>
+    <button class="hdr-btn" id="btn-viewer"  aria-label="Toggle viewer">📄 Viewer</button>
+    <button class="hdr-btn" id="btn-graph"   aria-label="Show graph">◉ Graph</button>
+  </header>
+
+  <!-- ── Main row ─────────────────────────────────────────────── -->
+  <div id="main">
+
+    <!-- ── Left Sidebar: search + node info + citations ────────── -->
+    <aside id="sidebar">
+
+      <div id="search-wrap">
+        <input id="search" type="search" placeholder="Search people, places, themes…"
+               autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+
+      <div id="filters">
+        <button class="filter-btn active" data-type="all">All</button>
+        <button class="filter-btn" data-type="person">People</button>
+        <button class="filter-btn" data-type="place">Places</button>
+        <button class="filter-btn" data-type="theme">Themes</button>
+        <button class="filter-btn" data-type="category">Categories</button>
+      </div>
+
+      <div id="info-panel">
+        <div id="placeholder">
+          Click any node to explore<br>documents and connections
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── Graph canvas ─────────────────────────────────────────── -->
+    <div id="graph-wrap">
+      <svg id="graph-canvas"></svg>
+
+      <!-- Tweaks toggle -->
+      <div id="tweaks-toggle">⚙ Tweaks <span class="arrow">▼</span></div>
+
+      <!-- Tweaks panel -->
+      <div id="tweaks-panel">
+        <div class="tweak-section-label">Physics</div>
+        <div class="tweak-row">
+          <div class="tweak-label">Node Spacing <span id="val-spacing">120</span></div>
+          <input class="tweak-slider" type="range" id="sl-spacing" min="40" max="300" value="120">
+        </div>
+        <div class="tweak-row">
+          <div class="tweak-label">Repulsion <span id="val-charge">6</span></div>
+          <input class="tweak-slider" type="range" id="sl-charge" min="1" max="20" value="6" step="0.5">
+        </div>
+        <div class="tweak-row">
+          <div class="tweak-label">Link Strength <span id="val-link">0.15</span></div>
+          <input class="tweak-slider" type="range" id="sl-link" min="0.01" max="1" value="0.15" step="0.01">
+        </div>
+        <div class="tweak-row">
+          <div class="tweak-label">Friction <span id="val-friction">0.55</span></div>
+          <input class="tweak-slider" type="range" id="sl-friction" min="0.1" max="0.9" value="0.55" step="0.01">
+        </div>
+        <div class="tweak-row">
+          <div class="tweak-label">Collision Pad <span id="val-collide">6</span>px</div>
+          <input class="tweak-slider" type="range" id="sl-collide" min="0" max="40" value="6">
+        </div>
+        <hr class="tweak-divider">
+        <div class="tweak-section-label">Display</div>
+        <div class="tweak-row">
+          <div class="tweak-label">Node Scale <span id="val-scale">1.00</span>×</div>
+          <input class="tweak-slider" type="range" id="sl-scale" min="0.4" max="2.5" value="1.0" step="0.05">
+        </div>
+        <div class="tweak-row">
+          <div class="tweak-label">Link Opacity <span id="val-opacity">0.25</span></div>
+          <input class="tweak-slider" type="range" id="sl-opacity" min="0.05" max="1" value="0.25" step="0.01">
+        </div>
+        <div class="tweak-row">
+          <div class="tweak-label">Label Size <span id="val-label">9</span>px</div>
+          <input class="tweak-slider" type="range" id="sl-label" min="6" max="16" value="9">
+        </div>
+        <hr class="tweak-divider">
+        <div class="tweak-btn-row">
+          <button class="tweak-btn primary" id="tweak-reheat">Reheat</button>
+          <button class="tweak-btn"         id="tweak-reset">Reset</button>
+          <button class="tweak-btn"         id="tweak-freeze">Freeze</button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div id="legend">
+        <div class="leg"><div class="dot" style="background:#c084fc"></div>Patriarch / Matriarch</div>
+        <div class="leg"><div class="dot" style="background:#818cf8"></div>Child</div>
+        <div class="leg"><div class="dot" style="background:#94a3b8"></div>Ancestor</div>
+        <div class="leg"><div class="dot" style="background:#a78bfa"></div>Grandchild</div>
+        <div class="leg"><div class="dot" style="background:#34d399"></div>Place</div>
+        <div class="leg"><div class="dot" style="background:#fb923c"></div>Theme</div>
+        <div class="leg"><div class="dot" style="background:#38bdf8"></div>Category</div>
+      </div>
+
+      <!-- Stats -->
+      <div id="stats">
+        <div>Nodes: <span id="stat-nodes">—</span></div>
+        <div>Edges: <span id="stat-edges">—</span></div>
+        <div>Docs: <span id="stat-docs">1,394</span></div>
+      </div>
+
+      <!-- Tooltip -->
+      <div id="tooltip"></div>
+    </div><!-- /#graph-wrap -->
+
+    <!-- ── Document Viewer (right panel / slide-over / bottom sheet) ── -->
+    <section id="viewer" class="hidden">
+      <div id="viewer-header">
+        <span id="viewer-title">Document</span>
+        <a id="dl-btn" class="viewer-btn" href="#" download title="Download original file">⬇ Download</a>
+        <button id="viewer-close" title="Close viewer">✕</button>
+      </div>
+      <div id="viewer-content">
+        <!-- Loading spinner -->
+        <div id="viewer-loading">
+          <div class="spinner"></div>
+        </div>
+        <!-- Image viewer (JPG/PNG) -->
+        <div id="img-viewer">
+          <img id="doc-image" alt="Document image">
+        </div>
+        <!-- iframe for DOCX→HTML / PDF / text -->
+        <iframe id="doc-frame"
+                sandbox="allow-same-origin allow-scripts allow-popups"
+                title="Document viewer"></iframe>
+      </div>
+    </section><!-- /#viewer -->
+
+  </div><!-- /#main -->
+</div><!-- /#app -->
+
+<!-- Backdrop for mobile overlays -->
+<div id="backdrop"></div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"
+        integrity="sha512-M7nHCiNUOwFt6Us3r8alutZLm9qMt4s9951uo8jqO4UwJ1hziseL6O3ndFyigx6+LREfZqnhHxYjKRJ8ZQ69A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Graph data — generated by build_graph_data.py -->
+<script src="graph-data.js"></script>
+<!-- App logic -->
+<script src="app.js"></script>
+
+</body>
+</html>
