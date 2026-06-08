@@ -9,17 +9,21 @@
    ============================================================ */
 
 // ── Wait for D3 + data ────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof d3 === 'undefined') {
-    console.error('D3 not loaded');
+// graph-data.js is 1.7MB — it finishes parsing after DOMContentLoaded
+// fires, so we poll briefly instead of relying on a single event.
+function waitForData(attempts) {
+  if (attempts <= 0) {
+    document.getElementById('placeholder').innerHTML =
+      'Failed to load graph data.<br>Check browser console for errors.';
     return;
   }
-  if (typeof GRAPH_DATA === 'undefined') {
-    console.error('GRAPH_DATA not loaded');
+  if (typeof d3 === 'undefined' || typeof GRAPH_DATA === 'undefined') {
+    setTimeout(() => waitForData(attempts - 1), 100);
     return;
   }
   initApp();
-});
+}
+document.addEventListener('DOMContentLoaded', () => waitForData(50));
 
 function initApp() {
   const { nodes, edges, docs } = GRAPH_DATA;
@@ -268,7 +272,7 @@ function initApp() {
   };
 
   function showPlaceholder() {
-    infoPanel.innerHTML = `<div id="placeholder">
+    infoPanel.innerHTML = `<div id="placeholder" style="text-align:center;color:var(--muted);font-size:12px;margin-top:40px;line-height:2">
       Click any node to explore<br>documents and connections
     </div>`;
   }
